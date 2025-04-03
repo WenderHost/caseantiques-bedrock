@@ -1,62 +1,119 @@
-<p align="center">
-  <a href="https://roots.io/bedrock/">
-    <img alt="Bedrock" src="https://cdn.roots.io/app/uploads/logo-bedrock.svg" height="100">
-  </a>
-</p>
+# Case Antiques Website
 
-<p align="center">
-  <a href="https://packagist.org/packages/roots/bedrock">
-    <img alt="Packagist Installs" src="https://img.shields.io/packagist/dt/roots/bedrock?label=projects%20created&colorB=2b3072&colorA=525ddc&style=flat-square">
-  </a>
+This is the Case Antiques website built upon the Bedrock framework.
 
-  <a href="https://packagist.org/packages/roots/wordpress">
-    <img alt="roots/wordpress Packagist Downloads" src="https://img.shields.io/packagist/dt/roots/wordpress?label=roots%2Fwordpress%20downloads&logo=roots&logoColor=white&colorB=2b3072&colorA=525ddc&style=flat-square">
-  </a>
-  
-  <img src="https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/roots/bedrock/master/composer.json&label=wordpress&logo=roots&logoColor=white&query=$.require[%22roots/wordpress%22]&colorB=2b3072&colorA=525ddc&style=flat-square">
+## 🧪 Local Development Setup (Symlinked Packages with Composer)
 
-  <a href="https://github.com/roots/bedrock/actions/workflows/ci.yml">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/roots/bedrock/ci.yml?branch=master&logo=github&label=CI&style=flat-square">
-  </a>
+This project uses a flexible development setup that allows you to symlink local versions of Composer packages for development while still pulling from remote repositories in production.
 
-  <a href="https://twitter.com/rootswp">
-    <img alt="Follow Roots" src="https://img.shields.io/badge/follow%20@rootswp-1da1f2?logo=twitter&logoColor=ffffff&message=&style=flat-square">
-  </a>
-</p>
+This is accomplished using [`wikimedia/composer-merge-plugin`](https://github.com/wikimedia/composer-merge-plugin) and a local configuration file at `.localdev/composer.local.json`.
 
-<p align="center">WordPress boilerplate with Composer, easier configuration, and an improved folder structure</p>
+---
 
-<p align="center">
-  <a href="https://roots.io/bedrock/">Website</a> &nbsp;&nbsp; <a href="https://roots.io/bedrock/docs/installation/">Documentation</a> &nbsp;&nbsp; <a href="https://github.com/roots/bedrock/releases">Releases</a> &nbsp;&nbsp; <a href="https://discourse.roots.io/">Community</a>
-</p>
+### 📁 1. Create the `.localdev/` Directory
 
-## Sponsors
+In the root of your project, create a `.localdev/` directory:
 
-Bedrock is an open source project and completely free to use. If you've benefited from our projects and would like to support our future endeavors, please consider [sponsoring Roots](https://github.com/sponsors/roots).
+```bash
+mkdir .localdev
+cd .localdev
+```
 
-<div align="center">
-<a href="https://carrot.com/"><img src="https://cdn.roots.io/app/uploads/carrot.svg" alt="Carrot" width="120" height="90"></a> <a href="https://wordpress.com/"><img src="https://cdn.roots.io/app/uploads/wordpress.svg" alt="WordPress.com" width="120" height="90"></a> <a href="https://worksitesafety.ca/careers/"><img src="https://cdn.roots.io/app/uploads/worksite-safety.svg" alt="Worksite Safety" width="120" height="90"></a> <a href="https://www.itineris.co.uk/"><img src="https://cdn.roots.io/app/uploads/itineris.svg" alt="Itineris" width="120" height="90"></a> <a href="https://bonsai.so/"><img src="https://cdn.roots.io/app/uploads/bonsai.svg" alt="Bonsai" width="120" height="90"></a> <a href="https://fusepress.co/sp/sign-up/"><img src="https://cdn.roots.io/app/uploads/fusepress.svg" alt="FusePress" width="120" height="90"></a>
-</div>
+Then clone the relevant repositories into that folder. For example:
 
-## Overview
+```bash
+git clone git@github.com:mwender/auctions-and-items.git
+git clone git@github.com:wenderhost/case-antiques-extras.git
+git clone git@github.com:wenderhost/centric-pro-caseantiques.git
+```
 
-Bedrock is a WordPress boilerplate for developers that want to manage their projects with Git and Composer. Much of the philosophy behind Bedrock is inspired by the [Twelve-Factor App](http://12factor.net/) methodology, including the [WordPress specific version](https://roots.io/twelve-factor-wordpress/).
+> **Note:** You can use SSH or HTTPS clone URLs depending on your auth setup.
 
-- Better folder structure
-- Dependency management with [Composer](https://getcomposer.org)
-- Easy WordPress configuration with environment specific files
-- Environment variables with [Dotenv](https://github.com/vlucas/phpdotenv)
-- Autoloader for mu-plugins (use regular plugins as mu-plugins)
-- Enhanced security (separated web root and secure passwords with [wp-password-bcrypt](https://github.com/roots/wp-password-bcrypt))
+---
 
-## Getting Started
+### ⚙️ 2. Configure `.localdev/composer.local.json`
 
-See the [Bedrock installation documentation](https://roots.io/bedrock/docs/installation/).
+Inside `.localdev/`, create a file called `composer.local.json` with the following contents:
 
-## Stay Connected
+```json
+{
+  "repositories": [
+    {
+      "type": "path",
+      "url": "auctions-and-items",
+      "options": {
+        "symlink": true
+      }
+    },
+    {
+      "type": "path",
+      "url": "case-antiques-extras",
+      "options": {
+        "symlink": true
+      }
+    },
+    {
+      "type": "path",
+      "url": "centric-pro-caseantiques",
+      "options": {
+        "symlink": true
+      }
+    }    
+  ]
+}
+```
 
-- Join us on Discord by [sponsoring us on GitHub](https://github.com/sponsors/roots)
-- Participate on [Roots Discourse](https://discourse.roots.io/)
-- Follow [@rootswp on Twitter](https://twitter.com/rootswp)
-- Read the [Roots Blog](https://roots.io/blog/)
-- Subscribe to the [Roots Newsletter](https://roots.io/newsletter/)
+> This tells Composer to use local symlinked versions of these packages instead of pulling them from GitHub or SatisPress during development.
+
+---
+
+### 🧩 3. Enable Local Dev Mode
+
+In your `composer.json`, the `merge-plugin` section looks like this when **enabled**:
+
+```json
+"extra": {
+  "merge-plugin": {
+    "include": [
+      ".localdev/composer.local.json"
+    ],
+    "recurse": false,
+    "replace": false,
+    "merge-dev": true
+  }
+}
+```
+
+When you're ready to deploy or want to test without symlinks, you can **disable** it by renaming the key:
+
+```json
+"extra": {
+  "merge-plugin-disabled": {
+    "include": [
+      ".localdev/composer.local.json"
+    ],
+    "recurse": false,
+    "replace": false,
+    "merge-dev": true
+  }
+}
+```
+
+> This toggle lets you switch between local and production-style installs without changing the rest of your `composer.json`.
+
+---
+
+### 🌀 4. Install or Update Packages
+
+To install packages and respect the local symlinks:
+
+```bash
+composer update mwender/auctions-and-items
+```
+
+To switch back to production:
+
+```bash
+# Disable the merge plugin as shown above
+composer update mwender/auctions-and-items
+```
