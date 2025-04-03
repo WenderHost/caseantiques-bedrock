@@ -131,7 +131,7 @@
       ]
     },
     "wordpress-install-dir": "web/wp",
-    "merge-plugin": {
+    "merge-plugin-disabled": {
       "include": [
         ".localdev/composer.local.json"
       ],
