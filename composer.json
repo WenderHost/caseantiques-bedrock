@@ -29,6 +29,11 @@
     "forum": "https://discourse.roots.io/category/bedrock"
   },
   "repositories": {
+    "case-antiques-extras": {
+      "type": "vcs",
+      "url": "https://github.com/wenderhost/case-antiques-extras",
+      "only": ["wenderhost/case-antiques-extras"]
+    },
     "centric-pro-caseantiques": {
       "type": "vcs",
       "url": "https://github.com/wenderhost/centric-pro-caseantiques",
@@ -68,7 +73,34 @@
     "roots/wp-config": "1.0.0",
     "roots/wp-password-bcrypt": "1.2.0",
     "wenmark/genesis": "^3.5",
-    "wenderhost/centric-pro-caseantiques": "^1.4"
+    "wenderhost/centric-pro-caseantiques": "^1.4",
+    "wpengine/advanced-custom-fields-pro": "^6.3",
+    "wpackagist-plugin/all-in-one-seo-pack": "^4.8",
+    "wpackagist-plugin/allow-html-in-category-descriptions": "^1.2",
+    "mwender/auctions-and-items": "^1.9",
+    "wpackagist-plugin/breadcrumb-navxt": "^7.4",
+    "wpackagist-plugin/bulk-delete": "^6.0",
+    "wenderhost/case-antiques-extras": "^1.1",
+    "wpackagist-plugin/classic-editor": "^1.6",
+    "wpackagist-plugin/disable-comments": "^2.4",
+    "wpackagist-plugin/echo-knowledge-base": "^13.51",
+    "wpackagist-plugin/elementor": "^3.28",
+    "wenmark/elementor-pro": "^3.28",
+    "wpackagist-plugin/enhanced-recent-posts": "^1.3",
+    "wenmark/gp-nested-forms": "^1.2",
+    "wenmark/gravityforms": "^2.9",
+    "wenmark/gravityformsdropbox": "^3.2",
+    "wenmark/gravityformsstripe": "^5.9",
+    "wenmark/gravityperks": "^2.3",
+    "wpackagist-plugin/jetpack": "^14.5",
+    "wpackagist-plugin/safe-redirect-manager": "^2.2",
+    "wpackagist-plugin/instant-css": "^1.2",
+    "wpackagist-plugin/my-simple-space": "^1.2",
+    "wpackagist-plugin/post-smtp": "^3.1",
+    "wpackagist-plugin/search-meter": "^2.13",
+    "wpackagist-plugin/spinupwp": "^1.7",
+    "wpackagist-plugin/wpsite-show-ids": "^1.1",
+    "wpackagist-plugin/metronet-tag-manager": "^1.5"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
