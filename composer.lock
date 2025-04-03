@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0d73d8c93454433e5d4ef85ba1fb6b39",
+    "content-hash": "acc204c1a5c2d790b5f2bcbaef4d55d1",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1274,11 +1274,11 @@
         },
         {
             "name": "wenmark/genesis",
-            "version": "3.5.0",
+            "version": "3.6.0",
             "dist": {
                 "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/genesis/3.5.0",
-                "shasum": "812d96bcc87b7488d73d0d6d8ec54c606230e88f"
+                "url": "https://packages.wenmarkdigital.com/satispress/genesis/3.6.0",
+                "shasum": "558115cc1022d5f1de9804ce0c2d27c7c910fc38"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
