@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2099ee438a5f0ac37dc987dc4968ac6c",
+    "content-hash": "f3441a336dabec4bf7e31e4cfb3fe3dc",
     "packages": [
         {
             "name": "composer/installers",
@@ -1091,6 +1091,27 @@
                 }
             ],
             "time": "2024-07-20T21:52:34+00:00"
+        },
+        {
+            "name": "wenmark/genesis",
+            "version": "3.5.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://packages.wenmarkdigital.com/satispress/genesis/3.5.0",
+                "shasum": "812d96bcc87b7488d73d0d6d8ec54c606230e88f"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-theme",
+            "authors": [
+                {
+                    "name": "StudioPress",
+                    "homepage": "https://www.studiopress.com/"
+                }
+            ],
+            "description": "The industry standard for Premium WordPress Themes.",
+            "homepage": "https://my.studiopress.com/themes/genesis/"
         },
         {
             "name": "wpackagist-theme/twentytwentyfive",

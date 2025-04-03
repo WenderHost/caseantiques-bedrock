@@ -67,7 +67,8 @@
     "roots/wordpress": "6.7.2",
     "roots/wp-config": "1.0.0",
     "roots/wp-password-bcrypt": "1.2.0",
-    "wpackagist-theme/twentytwentyfive": "^1.0"
+    "wpackagist-theme/twentytwentyfive": "^1.0",
+    "wenmark/genesis": "^3.5"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
