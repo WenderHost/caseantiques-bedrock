@@ -130,7 +130,15 @@
         "type:wordpress-theme"
       ]
     },
-    "wordpress-install-dir": "web/wp"
+    "wordpress-install-dir": "web/wp",
+    "merge-plugin": {
+      "include": [
+        ".localdev/composer.local.json"
+      ],
+      "recurse": false,
+      "replace": false,
+      "merge-dev": true
+    }
   },
   "scripts": {
     "lint": "pint --test",
