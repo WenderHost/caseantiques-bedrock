@@ -68,7 +68,8 @@
     "roots/wp-config": "1.0.0",
     "roots/wp-password-bcrypt": "1.2.0",
     "wpackagist-theme/twentytwentyfive": "^1.0",
-    "wenmark/genesis": "^3.5"
+    "wenmark/genesis": "^3.5",
+    "wenderhost/centric-pro-caseantiques": "^1.4"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
