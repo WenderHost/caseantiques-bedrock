@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "76d9c76a5e4d8483f89615e27b8bf6d5",
+    "content-hash": "79a06624d1ef17e1da17a0576eb1da9f",
     "packages": [
         {
             "name": "composer/installers",
@@ -1158,24 +1158,6 @@
             ],
             "description": "The industry standard for Premium WordPress Themes.",
             "homepage": "https://my.studiopress.com/themes/genesis/"
-        },
-        {
-            "name": "wpackagist-theme/twentytwentyfive",
-            "version": "1.1",
-            "source": {
-                "type": "svn",
-                "url": "https://themes.svn.wordpress.org/twentytwentyfive/",
-                "reference": "1.1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://downloads.wordpress.org/theme/twentytwentyfive.1.1.zip"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-theme",
-            "homepage": "https://wordpress.org/themes/twentytwentyfive/"
         }
     ],
     "packages-dev": [
