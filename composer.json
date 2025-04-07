@@ -34,10 +34,10 @@
       "url": "https://github.com/wenderhost/case-antiques-extras",
       "only": ["wenderhost/case-antiques-extras"]
     },
-    "centric-pro-caseantiques": {
+    "centric-pro": {
       "type": "vcs",
-      "url": "https://github.com/wenderhost/centric-pro-caseantiques",
-      "only": ["wenderhost/centric-pro-caseantiques"]
+      "url": "https://github.com/wenderhost/centric-pro",
+      "only": ["wenderhost/centric-pro"]
     },
     "auctions-and-items-plugin": {
       "type": "vcs",
@@ -73,7 +73,7 @@
     "roots/wp-config": "1.0.0",
     "roots/wp-password-bcrypt": "1.2.0",
     "wenmark/genesis": "^3.5",
-    "wenderhost/centric-pro-caseantiques": "^1.4",
+    "wenderhost/centric-pro": "^1.4",
     "wpengine/advanced-custom-fields-pro": "^6.3",
     "wpackagist-plugin/all-in-one-seo-pack": "^4.8",
     "wpackagist-plugin/allow-html-in-category-descriptions": "^1.2",
