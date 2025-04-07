@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "30593f3fbe27d9f0189e976798a38a4e",
+    "content-hash": "20edc288e46167c31ab0da1f6b7fbe96",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -266,20 +266,21 @@
         },
         {
             "name": "mwender/auctions-and-items",
-            "version": "1.9.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mwender/auctions-and-items.git",
-                "reference": "7d89c8f72af6efaa5e3fff5e5b3a729aa8da23c1"
+                "reference": "7a05f49b3a69e445da52e010ddb8d60e0d28d78e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/7d89c8f72af6efaa5e3fff5e5b3a729aa8da23c1",
-                "reference": "7d89c8f72af6efaa5e3fff5e5b3a729aa8da23c1",
+                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/7a05f49b3a69e445da52e010ddb8d60e0d28d78e",
+                "reference": "7a05f49b3a69e445da52e010ddb8d60e0d28d78e",
                 "shasum": ""
             },
             "require": {
-                "a5hleyrich/wp-background-processing": "^1.0"
+                "a5hleyrich/wp-background-processing": "^1.0",
+                "zordius/lightncandy": "^1.2"
             },
             "type": "wordpress-plugin",
             "authors": [
@@ -290,10 +291,10 @@
             ],
             "description": "WordPress plugin for Auctions with Item CPTs.",
             "support": {
-                "source": "https://github.com/mwender/auctions-and-items/tree/1.9.0",
+                "source": "https://github.com/mwender/auctions-and-items/tree/2.0.0",
                 "issues": "https://github.com/mwender/auctions-and-items/issues"
             },
-            "time": "2024-06-11T20:03:40+00:00"
+            "time": "2025-04-07T18:24:32+00:00"
         },
         {
             "name": "oscarotero/env",
@@ -1757,6 +1758,62 @@
                 "wpengine/advanced-custom-fields": "self.version"
             },
             "type": "wordpress-plugin"
+        },
+        {
+            "name": "zordius/lightncandy",
+            "version": "v1.2.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/zordius/lightncandy.git",
+                "reference": "b451f73e8b5c73e62e365997ba3c993a0376b72a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/zordius/lightncandy/zipball/b451f73e8b5c73e62e365997ba3c993a0376b72a",
+                "reference": "b451f73e8b5c73e62e365997ba3c993a0376b72a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=7"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.2.5-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "LightnCandy\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Zordius Chen",
+                    "email": "zordius@gmail.com"
+                }
+            ],
+            "description": "An extremely fast PHP implementation of handlebars ( http://handlebarsjs.com/ ) and mustache ( http://mustache.github.io/ ).",
+            "homepage": "https://github.com/zordius/lightncandy",
+            "keywords": [
+                "handlebars",
+                "logicless",
+                "mustache",
+                "php",
+                "template"
+            ],
+            "support": {
+                "issues": "https://github.com/zordius/lightncandy/issues",
+                "source": "https://github.com/zordius/lightncandy/tree/v1.2.6"
+            },
+            "time": "2021-07-11T04:52:41+00:00"
         }
     ],
     "packages-dev": [
