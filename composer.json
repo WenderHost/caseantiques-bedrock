@@ -142,6 +142,9 @@
   },
   "scripts": {
     "lint": "pint --test",
-    "lint:fix": "pint"
+    "lint:fix": "pint",
+    "post-update-cmd": [
+      "cd web/app/plugins/auctions-and-items/ && bower install"
+    ]
   }
 }
