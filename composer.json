@@ -99,7 +99,8 @@
     "wpackagist-plugin/spinupwp": "^1.7",
     "wpackagist-plugin/wpsite-show-ids": "^1.1",
     "wpackagist-plugin/metronet-tag-manager": "^1.5",
-    "wikimedia/composer-merge-plugin": "^2.1"
+    "wikimedia/composer-merge-plugin": "^2.1",
+    "lukasbesch/bedrock-plugin-disabler": "^1.4"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "20edc288e46167c31ab0da1f6b7fbe96",
+    "content-hash": "b4aec4be363d6c94cb0ba2a5b9249e76",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -263,6 +263,50 @@
                 }
             ],
             "time": "2024-07-20T21:45:45+00:00"
+        },
+        {
+            "name": "lukasbesch/bedrock-plugin-disabler",
+            "version": "v1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lukasbesch/bedrock-plugin-disabler.git",
+                "reference": "6e1e6e9488edb6d78dbfa891df7c481fb7a4a017"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lukasbesch/bedrock-plugin-disabler/zipball/6e1e6e9488edb6d78dbfa891df7c481fb7a4a017",
+                "reference": "6e1e6e9488edb6d78dbfa891df7c481fb7a4a017",
+                "shasum": ""
+            },
+            "require": {
+                "composer/installers": "^1.4|^2.0",
+                "php": ">=5.6"
+            },
+            "require-dev": {
+                "roave/security-advisories": "dev-master",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "wordpress-muplugin",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Lukas Besch",
+                    "email": "connect@lukasbesch.com"
+                },
+                {
+                    "name": "Kamil Grzegorczyk",
+                    "email": "kamilgrzegorczyk@gmail.com"
+                }
+            ],
+            "description": "Disable certain plugins in non-production environments using PHP constants.",
+            "support": {
+                "issues": "https://github.com/lukasbesch/bedrock-plugin-disabler/issues",
+                "source": "https://github.com/lukasbesch/bedrock-plugin-disabler/tree/v1.4.0"
+            },
+            "time": "2023-02-06T12:11:13+00:00"
         },
         {
             "name": "mwender/auctions-and-items",
