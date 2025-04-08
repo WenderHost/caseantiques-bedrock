@@ -25,6 +25,9 @@ web/.htaccess
 .env.*
 !.env.example
 
+# Dev Env
+*.sublime-*
+
 # Composer
 /vendor
 auth.json
