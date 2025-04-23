@@ -1268,16 +1268,16 @@
         },
         {
             "name": "wenderhost/centric-pro",
-            "version": "1.4.6.1",
+            "version": "1.4.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/WenderHost/centric-pro.git",
-                "reference": "405861a2772d9d9cc31f0f5ea459fac6261ecc77"
+                "reference": "26f3f488d150d6ce42cfab8ce9bd93731476eee5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/405861a2772d9d9cc31f0f5ea459fac6261ecc77",
-                "reference": "405861a2772d9d9cc31f0f5ea459fac6261ecc77",
+                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/26f3f488d150d6ce42cfab8ce9bd93731476eee5",
+                "reference": "26f3f488d150d6ce42cfab8ce9bd93731476eee5",
                 "shasum": ""
             },
             "type": "wordpress-theme",
@@ -1293,10 +1293,10 @@
             ],
             "description": "Centric Pro WordPress Theme customized for Case Antiques",
             "support": {
-                "source": "https://github.com/WenderHost/centric-pro/tree/1.4.6.1",
+                "source": "https://github.com/WenderHost/centric-pro/tree/1.4.6.2",
                 "issues": "https://github.com/WenderHost/centric-pro/issues"
             },
-            "time": "2025-04-23T21:38:29+00:00"
+            "time": "2025-04-23T21:51:02+00:00"
         },
         {
             "name": "wenmark/elementor-pro",
