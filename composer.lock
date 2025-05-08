@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c28190323b291761a9d36c021d69f040",
+    "content-hash": "a67e0ff06ed5c7e53de0336fdadec26a",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1585,24 +1585,6 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/jetpack/"
-        },
-        {
-            "name": "wpackagist-plugin/metronet-tag-manager",
-            "version": "1.5.5",
-            "source": {
-                "type": "svn",
-                "url": "https://plugins.svn.wordpress.org/metronet-tag-manager/",
-                "reference": "tags/1.5.5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/metronet-tag-manager.1.5.5.zip"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-plugin",
-            "homepage": "https://wordpress.org/plugins/metronet-tag-manager/"
         },
         {
             "name": "wpackagist-plugin/post-smtp",
