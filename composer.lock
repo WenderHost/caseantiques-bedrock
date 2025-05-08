@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "889d9381a5d2ee3afe1e30a6894f6823",
+    "content-hash": "88636fa95857de0bf7890f7c7edbd535",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1342,27 +1342,6 @@
             "homepage": "https://my.studiopress.com/themes/genesis/"
         },
         {
-            "name": "wenmark/gp-nested-forms",
-            "version": "1.2.7",
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/gp-nested-forms/1.2.7",
-                "shasum": "10bc953a64ebcfbf1baf6c9cd51fd6560f62df38"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-plugin",
-            "authors": [
-                {
-                    "name": "Gravity Wiz",
-                    "homepage": "https://gravitywiz.com"
-                }
-            ],
-            "description": "Create forms within forms for better management of complex forms. Formception!",
-            "homepage": "https://gravitywiz.com/documentation/gravity-forms-nested-forms/"
-        },
-        {
             "name": "wenmark/gravityforms",
             "version": "2.9.7.2",
             "dist": {
@@ -1424,27 +1403,6 @@
             ],
             "description": "Integrates Gravity Forms with Stripe, enabling end users to purchase goods and services through Gravity Forms.",
             "homepage": "https://gravityforms.com"
-        },
-        {
-            "name": "wenmark/gravityperks",
-            "version": "2.3.15",
-            "dist": {
-                "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/gravityperks/2.3.15",
-                "shasum": "5ec17b0a3549540fb2091aa1bc1989d1887b5372"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-plugin",
-            "authors": [
-                {
-                    "name": "Gravity Wiz",
-                    "homepage": "https://gravitywiz.com/"
-                }
-            ],
-            "description": "Effortlessly enhance Gravity Forms with powerful add-ons (“perks”) for smarter, more flexible forms—all backed by legendary support.",
-            "homepage": "https://gravitywiz.com/"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -1539,24 +1497,6 @@
             "homepage": "https://wordpress.org/plugins/allow-html-in-category-descriptions/"
         },
         {
-            "name": "wpackagist-plugin/breadcrumb-navxt",
-            "version": "7.4.1",
-            "source": {
-                "type": "svn",
-                "url": "https://plugins.svn.wordpress.org/breadcrumb-navxt/",
-                "reference": "tags/7.4.1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/breadcrumb-navxt.7.4.1.zip"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-plugin",
-            "homepage": "https://wordpress.org/plugins/breadcrumb-navxt/"
-        },
-        {
             "name": "wpackagist-plugin/classic-editor",
             "version": "1.6.7",
             "source": {
@@ -1627,24 +1567,6 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/elementor/"
-        },
-        {
-            "name": "wpackagist-plugin/enhanced-recent-posts",
-            "version": "1.3.4",
-            "source": {
-                "type": "svn",
-                "url": "https://plugins.svn.wordpress.org/enhanced-recent-posts/",
-                "reference": "tags/1.3.4"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/enhanced-recent-posts.1.3.4.zip"
-            },
-            "require": {
-                "composer/installers": "^1.0 || ^2.0"
-            },
-            "type": "wordpress-plugin",
-            "homepage": "https://wordpress.org/plugins/enhanced-recent-posts/"
         },
         {
             "name": "wpackagist-plugin/instant-css",
