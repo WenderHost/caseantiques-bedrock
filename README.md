@@ -43,21 +43,24 @@ Inside `.localdev/`, create a file called `composer.local.json` with the followi
       "url": "auctions-and-items",
       "options": {
         "symlink": true
-      }
+      },
+      "canonical": false      
     },
     {
       "type": "path",
       "url": "case-antiques-extras",
       "options": {
         "symlink": true
-      }
+      },
+      "canonical": false      
     },
     {
       "type": "path",
       "url": "centric-pro-caseantiques",
       "options": {
         "symlink": true
-      }
+      },
+      "canonical": false      
     }    
   ]
 }
@@ -83,6 +86,8 @@ In your `composer.json`, the `merge-plugin` section looks like this when **enabl
   }
 }
 ```
+
+👆 After you've **enabled** Local Dev Mode, run `composer update`.
 
 When you're ready to deploy or want to test without symlinks, you can **disable** it by renaming the key:
 
