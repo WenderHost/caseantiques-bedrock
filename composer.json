@@ -129,7 +129,7 @@
         ".localdev/composer.local.json"
       ],
       "recurse": false,
-      "replace": false,
+      "replace": true,
       "merge-dev": true
     }
   },
