@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "532c89163e2db5e307d04f83921f3964",
+    "content-hash": "a11fb5554266ea8e372a2abdccbed460",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1233,16 +1233,16 @@
         },
         {
             "name": "wenderhost/case-antiques-extras",
-            "version": "1.1.2",
+            "version": "1.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/WenderHost/case-antiques-extras.git",
-                "reference": "406313bab6048e7ea85b53f63d1509333b2c6a99"
+                "reference": "f0e90f60bcaf1b35b320b5b0d0522090c2b03a91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WenderHost/case-antiques-extras/zipball/406313bab6048e7ea85b53f63d1509333b2c6a99",
-                "reference": "406313bab6048e7ea85b53f63d1509333b2c6a99",
+                "url": "https://api.github.com/repos/WenderHost/case-antiques-extras/zipball/f0e90f60bcaf1b35b320b5b0d0522090c2b03a91",
+                "reference": "f0e90f60bcaf1b35b320b5b0d0522090c2b03a91",
                 "shasum": ""
             },
             "type": "wordpress-plugin",
@@ -1258,10 +1258,10 @@
             ],
             "description": "Misc code extensions for the Case Antiques website",
             "support": {
-                "source": "https://github.com/WenderHost/case-antiques-extras/tree/1.1.2",
+                "source": "https://github.com/WenderHost/case-antiques-extras/tree/1.1.3",
                 "issues": "https://github.com/WenderHost/case-antiques-extras/issues"
             },
-            "time": "2025-07-17T19:28:50+00:00"
+            "time": "2025-07-18T18:35:30+00:00"
         },
         {
             "name": "wenderhost/centric-pro",
