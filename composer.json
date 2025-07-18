@@ -93,7 +93,6 @@
     "wpackagist-plugin/search-meter": "^2.13",
     "wpackagist-plugin/spinupwp": "^1.7",
     "wpackagist-plugin/wpsite-show-ids": "^1.1",
-    "wikimedia/composer-merge-plugin": "^2.1",
     "lukasbesch/bedrock-plugin-disabler": "^1.4"
   },
   "require-dev": {
@@ -105,8 +104,7 @@
     "preferred-install": "dist",
     "allow-plugins": {
       "composer/installers": true,
-      "roots/wordpress-core-installer": true,
-      "wikimedia/composer-merge-plugin": true
+      "roots/wordpress-core-installer": true
     }
   },
   "minimum-stability": "dev",
@@ -123,15 +121,7 @@
         "type:wordpress-theme"
       ]
     },
-    "wordpress-install-dir": "web/wp",
-    "merge-plugin-disabled": {
-      "include": [
-        ".localdev/composer.local.json"
-      ],
-      "recurse": false,
-      "replace": true,
-      "merge-dev": true
-    }
+    "wordpress-install-dir": "web/wp"
   },
   "scripts": {
     "lint": "pint --test",
