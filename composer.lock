@@ -310,16 +310,16 @@
         },
         {
             "name": "mwender/auctions-and-items",
-            "version": "3.0.0",
+            "version": "3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mwender/auctions-and-items.git",
-                "reference": "d0c3f825a16c2b8e79dd86406cd1818cbca3aba7"
+                "reference": "7893585619f8e8d303e22c9e7f2a4bfc1a584948"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/d0c3f825a16c2b8e79dd86406cd1818cbca3aba7",
-                "reference": "d0c3f825a16c2b8e79dd86406cd1818cbca3aba7",
+                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/7893585619f8e8d303e22c9e7f2a4bfc1a584948",
+                "reference": "7893585619f8e8d303e22c9e7f2a4bfc1a584948",
                 "shasum": ""
             },
             "require": {
@@ -335,10 +335,10 @@
             ],
             "description": "WordPress plugin for Auctions with Item CPTs.",
             "support": {
-                "source": "https://github.com/mwender/auctions-and-items/tree/3.0.0",
+                "source": "https://github.com/mwender/auctions-and-items/tree/3.0.1",
                 "issues": "https://github.com/mwender/auctions-and-items/issues"
             },
-            "time": "2025-07-18T18:55:00+00:00"
+            "time": "2025-07-18T19:01:07+00:00"
         },
         {
             "name": "oscarotero/env",
