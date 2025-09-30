@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5d76b47402431c9f004951db24691939",
+    "content-hash": "c2b59120d0652d769024652595bade53",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1265,16 +1265,16 @@
         },
         {
             "name": "wenderhost/centric-pro",
-            "version": "1.4.6.2",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/WenderHost/centric-pro.git",
-                "reference": "26f3f488d150d6ce42cfab8ce9bd93731476eee5"
+                "reference": "1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/26f3f488d150d6ce42cfab8ce9bd93731476eee5",
-                "reference": "26f3f488d150d6ce42cfab8ce9bd93731476eee5",
+                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf",
+                "reference": "1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf",
                 "shasum": ""
             },
             "type": "wordpress-theme",
@@ -1290,10 +1290,10 @@
             ],
             "description": "Centric Pro WordPress Theme customized for Case Antiques",
             "support": {
-                "source": "https://github.com/WenderHost/centric-pro/tree/1.4.6.2",
+                "source": "https://github.com/WenderHost/centric-pro/tree/1.5.0",
                 "issues": "https://github.com/WenderHost/centric-pro/issues"
             },
-            "time": "2025-04-23T21:51:02+00:00"
+            "time": "2025-09-30T21:25:50+00:00"
         },
         {
             "name": "wenmark/elementor-pro",

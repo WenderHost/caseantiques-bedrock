@@ -73,7 +73,7 @@
     "roots/wp-config": "1.0.0",
     "roots/wp-password-bcrypt": "1.2.0",
     "wenmark/genesis": "^3.5",
-    "wenderhost/centric-pro": "^1.4",
+    "wenderhost/centric-pro": "^1.5",
     "wpengine/advanced-custom-fields-pro": "^6.3",
     "wpackagist-plugin/all-in-one-seo-pack": "^4.8",
     "mwender/auctions-and-items": "^3",
