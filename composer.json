@@ -86,7 +86,7 @@
     "wenmark/gravityforms": "^2.9",
     "wenmark/gravityformsdropbox": "^3",
     "wenmark/gravityformsstripe": "^5.9",
-    "wpackagist-plugin/jetpack": "^14.5",
+    "wpackagist-plugin/jetpack": "^15",
     "wpackagist-plugin/safe-redirect-manager": "^2.2",
     "wpackagist-plugin/instant-css": "^1.2",
     "wpackagist-plugin/post-smtp": "^3.1",

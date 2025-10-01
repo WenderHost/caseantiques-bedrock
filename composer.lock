@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4b40f9e228bcb0b5d85109dc189af119",
+    "content-hash": "2de68dcbcaee3815670677114669c720",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1540,15 +1540,15 @@
         },
         {
             "name": "wpackagist-plugin/jetpack",
-            "version": "14.9.1",
+            "version": "15.0.2",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/jetpack/",
-                "reference": "tags/14.9.1"
+                "reference": "tags/15.0.2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/jetpack.14.9.1.zip"
+                "url": "https://downloads.wordpress.org/plugin/jetpack.15.0.2.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
