@@ -151,6 +151,37 @@ Config::define('SCRIPT_DEBUG', false);
 ini_set('display_errors', '0');
 
 /**
+ * Bedrock Constants Loader
+ *
+ * Reads values from .env and defines them as WordPress constants.
+ * Keeps config DRY and environment-specific.
+ */
+$constant_map = [
+  'WP_MEMORY_LIMIT'     => 'WP_MEMORY_LIMIT',
+  'WP_MAX_MEMORY_LIMIT' => 'WP_MAX_MEMORY_LIMIT',
+  'AUTOSAVE_INTERVAL'   => 'AUTOSAVE_INTERVAL',
+  'WP_POST_REVISIONS'   => 'WP_POST_REVISIONS',
+  'DISALLOW_FILE_EDIT'  => 'DISALLOW_FILE_EDIT',
+];
+
+foreach ($constant_map as $env_key => $constant_name) {
+  $value = env($env_key);
+  if ($value !== null && ! defined($constant_name)) {
+    // Cast booleans and numbers properly
+    if (is_numeric($value)) {
+      $value = (int) $value;
+    } elseif (strtolower($value) === 'true') {
+      $value = true;
+    } elseif (strtolower($value) === 'false') {
+      $value = false;
+    }
+
+    define($constant_name, $value);
+  }
+}
+
+
+/**
  * Allow WordPress to detect HTTPS when used behind a reverse proxy or a load balancer
  * See https://codex.wordpress.org/Function_Reference/is_ssl#Notes
  */
