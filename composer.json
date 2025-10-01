@@ -93,7 +93,8 @@
     "wpackagist-plugin/search-meter": "^2.13",
     "wpackagist-plugin/spinupwp": "^1.7",
     "wpackagist-plugin/wpsite-show-ids": "^1.1",
-    "lukasbesch/bedrock-plugin-disabler": "^1.4"
+    "lukasbesch/bedrock-plugin-disabler": "^1.4",
+    "wpackagist-plugin/index-wp-mysql-for-speed": "^1.5"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c2b59120d0652d769024652595bade53",
+    "content-hash": "cf724d15a8ed75df73212af582a33fd9",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1501,6 +1501,24 @@
             },
             "type": "wordpress-plugin",
             "homepage": "https://wordpress.org/plugins/elementor/"
+        },
+        {
+            "name": "wpackagist-plugin/index-wp-mysql-for-speed",
+            "version": "1.5.4",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/index-wp-mysql-for-speed/",
+                "reference": "tags/1.5.4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/index-wp-mysql-for-speed.1.5.4.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/index-wp-mysql-for-speed/"
         },
         {
             "name": "wpackagist-plugin/instant-css",
