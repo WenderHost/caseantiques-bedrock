@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5f8ea17a8abf17ab1cc9b5b86736ba3a",
+    "content-hash": "4b40f9e228bcb0b5d85109dc189af119",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1372,11 +1372,11 @@
         },
         {
             "name": "wenmark/gravityformsdropbox",
-            "version": "3.2.0",
+            "version": "3.3.0",
             "dist": {
                 "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/gravityformsdropbox/3.2.0",
-                "shasum": "210ed31428cd511a45a5e97c51fe4bab09522fa7"
+                "url": "https://packages.wenmarkdigital.com/satispress/gravityformsdropbox/3.3.0",
+                "shasum": "93f3823c4200b975652d5350f8649af797792668"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
