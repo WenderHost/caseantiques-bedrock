@@ -1309,11 +1309,11 @@
         },
         {
             "name": "wenmark/elementor-pro",
-            "version": "3.32.2",
+            "version": "3.33.2",
             "dist": {
                 "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/elementor-pro/3.32.2",
-                "shasum": "0bcc67e6ef7f94fd1cc506ddf073474f7b954b00"
+                "url": "https://packages.wenmarkdigital.com/satispress/elementor-pro/3.33.2",
+                "shasum": "1f8f489dac0930d76521dbe97ce6ead7bc2ef17b"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -1450,15 +1450,15 @@
         },
         {
             "name": "wpackagist-plugin/disable-comments",
-            "version": "2.5.3",
+            "version": "2.6.1",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/disable-comments/",
-                "reference": "tags/2.5.3"
+                "reference": "tags/2.6.1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/disable-comments.2.5.3.zip"
+                "url": "https://downloads.wordpress.org/plugin/disable-comments.2.6.1.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -1486,15 +1486,15 @@
         },
         {
             "name": "wpackagist-plugin/elementor",
-            "version": "3.32.3",
+            "version": "3.33.4",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/elementor/",
-                "reference": "tags/3.32.3"
+                "reference": "tags/3.33.4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/elementor.3.32.3.zip"
+                "url": "https://downloads.wordpress.org/plugin/elementor.3.33.4.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -1648,10 +1648,10 @@
         },
         {
             "name": "wpengine/advanced-custom-fields-pro",
-            "version": "6.5.1",
+            "version": "6.7.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://connect.advancedcustomfields.com/v2/plugins/composer_download?s=composer&p=pro&t=6.5.1"
+                "url": "https://connect.advancedcustomfields.com/v2/plugins/composer_download?s=composer&p=pro&t=6.7.0.2"
             },
             "require": {
                 "composer/installers": "~1.0 || ~2.0"
