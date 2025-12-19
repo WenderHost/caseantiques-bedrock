@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2de68dcbcaee3815670677114669c720",
+    "content-hash": "246c0036b21f7a09cab205c0887702d3",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1393,11 +1393,11 @@
         },
         {
             "name": "wenmark/gravityformsstripe",
-            "version": "5.9.0",
+            "version": "6.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://packages.wenmarkdigital.com/satispress/gravityformsstripe/5.9.0",
-                "shasum": "4b8022a73552bf41748b14a96845ff87656bbad8"
+                "url": "https://packages.wenmarkdigital.com/satispress/gravityformsstripe/6.0.2",
+                "shasum": "ae6408f0d25957cf658b12e9646d8fbacbf18b21"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
@@ -2791,6 +2791,42 @@
                 }
             ],
             "time": "2025-12-16T01:34:46+00:00"
+        },
+        {
+            "name": "wpackagist-plugin/localdev-switcher",
+            "version": "0.7.0",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/localdev-switcher/",
+                "reference": "tags/0.7.0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/localdev-switcher.0.7.0.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/localdev-switcher/"
+        },
+        {
+            "name": "wpackagist-plugin/plugin-check",
+            "version": "1.7.0",
+            "source": {
+                "type": "svn",
+                "url": "https://plugins.svn.wordpress.org/plugin-check/",
+                "reference": "tags/1.7.0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://downloads.wordpress.org/plugin/plugin-check.1.7.0.zip"
+            },
+            "require": {
+                "composer/installers": "^1.0 || ^2.0"
+            },
+            "type": "wordpress-plugin",
+            "homepage": "https://wordpress.org/plugins/plugin-check/"
         }
     ],
     "aliases": [],

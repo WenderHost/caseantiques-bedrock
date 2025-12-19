@@ -85,7 +85,7 @@
     "wenmark/elementor-pro": "^3.28",
     "wenmark/gravityforms": "^2.9",
     "wenmark/gravityformsdropbox": "^3",
-    "wenmark/gravityformsstripe": "^5.9",
+    "wenmark/gravityformsstripe": "^6",
     "wpackagist-plugin/jetpack": "^15",
     "wpackagist-plugin/safe-redirect-manager": "^2.2",
     "wpackagist-plugin/instant-css": "^1.2",
@@ -98,7 +98,9 @@
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
-    "laravel/pint": "^1.18"
+    "laravel/pint": "^1.18",
+    "wpackagist-plugin/localdev-switcher": "^0.7.0",
+    "wpackagist-plugin/plugin-check": "^1.7"
   },
   "config": {
     "optimize-autoloader": true,
