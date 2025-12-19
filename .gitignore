@@ -37,3 +37,4 @@ wp-cli.local.yml
 
 # Misc
 web/*.sh
+web/app/mu-plugins/index-wp-mysql-for-speed-update-filter.php
