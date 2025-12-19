@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "246c0036b21f7a09cab205c0887702d3",
+    "content-hash": "66f876a990b36f3017a1a1c28385d2bc",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -310,22 +310,23 @@
         },
         {
             "name": "mwender/auctions-and-items",
-            "version": "3.0.1",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mwender/auctions-and-items.git",
-                "reference": "7893585619f8e8d303e22c9e7f2a4bfc1a584948"
+                "reference": "6c2cce1b1e42acb24c0802b9ca519ebff030140e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/7893585619f8e8d303e22c9e7f2a4bfc1a584948",
-                "reference": "7893585619f8e8d303e22c9e7f2a4bfc1a584948",
+                "url": "https://api.github.com/repos/mwender/auctions-and-items/zipball/6c2cce1b1e42acb24c0802b9ca519ebff030140e",
+                "reference": "6c2cce1b1e42acb24c0802b9ca519ebff030140e",
                 "shasum": ""
             },
             "require": {
                 "a5hleyrich/wp-background-processing": "^1.0",
                 "zordius/lightncandy": "^1.2"
             },
+            "default-branch": true,
             "type": "wordpress-plugin",
             "authors": [
                 {
@@ -335,10 +336,10 @@
             ],
             "description": "WordPress plugin for Auctions with Item CPTs.",
             "support": {
-                "source": "https://github.com/mwender/auctions-and-items/tree/3.0.1",
+                "source": "https://github.com/mwender/auctions-and-items/tree/3.0.2",
                 "issues": "https://github.com/mwender/auctions-and-items/issues"
             },
-            "time": "2025-07-18T19:01:07+00:00"
+            "time": "2025-12-19T16:58:52+00:00"
         },
         {
             "name": "oscarotero/env",
@@ -1277,18 +1278,19 @@
         },
         {
             "name": "wenderhost/centric-pro",
-            "version": "1.5.0",
+            "version": "dev-main",
             "source": {
                 "type": "git",
                 "url": "https://github.com/WenderHost/centric-pro.git",
-                "reference": "1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf"
+                "reference": "070fcbe2fdd00c73c875cbe774d8fff89c9ceb12"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf",
-                "reference": "1ea0c2641ec3cf995504a6baa3e8d3bbf1145cdf",
+                "url": "https://api.github.com/repos/WenderHost/centric-pro/zipball/070fcbe2fdd00c73c875cbe774d8fff89c9ceb12",
+                "reference": "070fcbe2fdd00c73c875cbe774d8fff89c9ceb12",
                 "shasum": ""
             },
+            "default-branch": true,
             "type": "wordpress-theme",
             "license": [
                 "GPLv2"
@@ -1302,10 +1304,10 @@
             ],
             "description": "Centric Pro WordPress Theme customized for Case Antiques",
             "support": {
-                "source": "https://github.com/WenderHost/centric-pro/tree/1.5.0",
+                "source": "https://github.com/WenderHost/centric-pro/tree/main",
                 "issues": "https://github.com/WenderHost/centric-pro/issues"
             },
-            "time": "2025-09-30T21:25:50+00:00"
+            "time": "2025-12-19T17:28:47+00:00"
         },
         {
             "name": "wenmark/elementor-pro",
@@ -2832,7 +2834,9 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "roave/security-advisories": 20
+        "mwender/auctions-and-items": 20,
+        "roave/security-advisories": 20,
+        "wenderhost/centric-pro": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
