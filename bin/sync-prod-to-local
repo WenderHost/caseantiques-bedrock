@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+#ENV_FILE="$PROJECT_ROOT/.env"
+#if [[ -f "$ENV_FILE" ]]; then
+#  set -a
+#  # shellcheck disable=SC1090
+#  source <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" | sed 's/\r$//')
+#  set +a
+#fi
+ENV_FILE="$PROJECT_ROOT/.env"
+if [[ -f "$ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+fi
+
+: "${SYNC_REMOTE_SSH_USER:?Missing SYNC_REMOTE_SSH_USER in .env}"
+: "${SYNC_REMOTE_SSH_HOST:?Missing SYNC_REMOTE_SSH_HOST in .env}"
+: "${SYNC_REMOTE_HOST:?Missing SYNC_REMOTE_HOST in .env}"
+: "${SYNC_LOCAL_HOST:?Missing SYNC_LOCAL_HOST in .env}"
+: "${SYNC_REMOTE_WEB_DIR:?Missing SYNC_REMOTE_WEB_DIR in .env}"
+
+SYNC_REMOTE_SSH_PORT="${SYNC_REMOTE_SSH_PORT:-22}"
+SYNC_REMOTE_STAGE_DIR="${SYNC_REMOTE_STAGE_DIR:-~/files}"
+
+SSH_TARGET="${SYNC_REMOTE_SSH_USER}@${SYNC_REMOTE_SSH_HOST}"
+
+WEB_DIR="$PROJECT_ROOT/web"
+SQL_DIR="$PROJECT_ROOT/sql"
+mkdir -p "$SQL_DIR"
+
+export PROJECT_ROOT WEB_DIR SQL_DIR
+export SYNC_REMOTE_HOST SYNC_LOCAL_HOST
+
+REMOTE_SQL="production.sql"
+REMOTE_TGZ="production.sql.tar.gz"
+
+LOCAL_TGZ="$SQL_DIR/$REMOTE_TGZ"
+LOCAL_SQL="$SQL_DIR/$REMOTE_SQL"
+LOCAL_BACKUP="$SQL_DIR/localhost.sql"
+
+ASSUME_YES=0
+DRY_RUN=0
+
+usage() {
+  cat <<'EOF'
+Usage: bin/sync-prod-to-local [options]
+
+Options:
+  -y, --yes       Skip confirmation prompt
+  -n, --dry-run   Print commands, do not execute
+  -h, --help      Show help
+
+Reads config from .env:
+  SYNC_REMOTE_SSH_USER, SYNC_REMOTE_SSH_HOST, SYNC_REMOTE_SSH_PORT
+  SYNC_REMOTE_HOST, SYNC_LOCAL_HOST
+  SYNC_REMOTE_WEB_DIR, SYNC_REMOTE_STAGE_DIR
+EOF
+}
+
+run() {
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    printf 'DRY RUN: %q ' "$@"
+    printf '\n'
+  else
+    "$@"
+  fi
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes) ASSUME_YES=1 ;;
+    -n|--dry-run) DRY_RUN=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) ;;
+  esac
+done
+
+if [[ ! -d "$WEB_DIR" ]]; then
+  echo "Error: Expected Bedrock web dir at $WEB_DIR"
+  exit 1
+fi
+
+if [[ "$ASSUME_YES" -ne 1 ]]; then
+  read -r -p "🚨 Sync Production to local? [y/N] " response
+  if [[ ! "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+    echo "Exiting..."
+    exit 0
+  fi
+fi
+
+echo "🔔 Exporting DBs..."
+
+echo "👇 Backing up LOCAL database to $LOCAL_BACKUP"
+run bash -lc "cd \"$WEB_DIR\" && wp db export \"$LOCAL_BACKUP\""
+
+echo "👆 Exporting REMOTE database on server..."
+# 1) Export on remote into stage dir (so compression + cleanup is straightforward).
+run ssh -p "$SYNC_REMOTE_SSH_PORT" "$SSH_TARGET" \
+  "set -e; mkdir -p $SYNC_REMOTE_STAGE_DIR; cd $SYNC_REMOTE_WEB_DIR; wp db export $SYNC_REMOTE_STAGE_DIR/$REMOTE_SQL"
+
+echo "👆 Compressing REMOTE database..."
+# 2) Tar+gzip on remote and remove the raw sql.
+run ssh -p "$SYNC_REMOTE_SSH_PORT" "$SSH_TARGET" \
+  "set -e; cd $SYNC_REMOTE_STAGE_DIR; tar -czf $REMOTE_TGZ $REMOTE_SQL; rm -f $REMOTE_SQL"
+
+echo "⬇️ Downloading archive..."
+# 3) Pull to local.
+run scp -P "$SYNC_REMOTE_SSH_PORT" "$SSH_TARGET:$SYNC_REMOTE_STAGE_DIR/$REMOTE_TGZ" "$LOCAL_TGZ"
+
+echo "🧹 Cleaning up remote archive..."
+run ssh -p "$SYNC_REMOTE_SSH_PORT" "$SSH_TARGET" \
+  "rm -f $SYNC_REMOTE_STAGE_DIR/$REMOTE_TGZ"
+
+echo "📦 Extracting locally..."
+run tar -xzf "$LOCAL_TGZ" -C "$SQL_DIR"
+run rm -f "$LOCAL_TGZ"
+
+echo "⚙️ Importing production.sql into local..."
+#run bash -lc "cd \"$WEB_DIR\" && wp db import \"$LOCAL_SQL\""
+run bash -c "cd \"$WEB_DIR\" && wp db cli < \"$LOCAL_SQL\""
+
+run rm -f "$LOCAL_SQL"
+
+echo "👉 [WP DB] Replacing https://$SYNC_REMOTE_HOST with https://$SYNC_LOCAL_HOST..."
+run bash -lc "cd \"$WEB_DIR\" && wp search-replace \"https://$SYNC_REMOTE_HOST\" \"https://$SYNC_LOCAL_HOST\" --skip-columns=guid --format=count"
+
+# Optional per-project steps:
+# Create bin/sync.d/post-import.sh to run Elementor fixes, plugin toggles, etc.
+POST_IMPORT_HOOK="$PROJECT_ROOT/bin/sync.d/post-import.sh"
+
+if [[ -f "$POST_IMPORT_HOOK" ]]; then
+  echo "---"
+  echo "🪝 Running post-import hook: $POST_IMPORT_HOOK"
+  run bash "$POST_IMPORT_HOOK"
+fi
+
+echo "✅ Done."
+echo "Local DB backup saved at: $LOCAL_BACKUP"
+
