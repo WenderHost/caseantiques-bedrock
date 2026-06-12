@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2833cb02dcea3bc6256f191d36354eff",
+    "content-hash": "063a254bd887b53c1dbbb8399e4f7802",
     "packages": [
         {
             "name": "a5hleyrich/wp-background-processing",
@@ -1469,15 +1469,15 @@
         },
         {
             "name": "wpackagist-plugin/echo-knowledge-base",
-            "version": "15.0.0",
+            "version": "17.211.0",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/echo-knowledge-base/",
-                "reference": "tags/15.0.0"
+                "reference": "tags/17.211.0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/echo-knowledge-base.15.0.0.zip"
+                "url": "https://downloads.wordpress.org/plugin/echo-knowledge-base.17.211.0.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
