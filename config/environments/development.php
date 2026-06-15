@@ -26,4 +26,6 @@ Config::define('DISABLED_PLUGINS', [
     'spinupwp/spinupwp.php',
     'all-in-one-seo-pack/all_in_one_seo_pack.php',
     'post-smtp/postman-smtp.php',
+    'wordfence/wordfence.php',
+    'limit-login-attempts-reloaded/limit-login-attempts-reloaded.php',
 ]);
