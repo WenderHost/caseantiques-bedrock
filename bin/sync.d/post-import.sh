@@ -8,7 +8,8 @@ wp elementor replace_urls "https://$SYNC_REMOTE_HOST" "https://$SYNC_LOCAL_HOST"
 
 echo "👉 [Elementor] Flushing CSS..."
 wp elementor flush_css
-wp plugin deactivate spinupwp limit-login-attempts-reloaded
+wp plugin activate localdev-switcher
+#wp plugin deactivate spinupwp limit-login-attempts-reloaded wordfence
 
 # Keep project-specific plugin toggles non-fatal.
 #wp plugin deactivate spinupwp limit-login-attempts-reloaded || true
