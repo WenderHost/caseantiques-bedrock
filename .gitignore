@@ -40,5 +40,6 @@ web/*.sh
 web/app/mu-plugins/index-wp-mysql-for-speed-update-filter.php
 web/app/themes/localdev-*
 bin/nginx/
-bin/logs/
+bin/logs/*
+!bin/logs/AGENTS.md
 web/app/wflogs/
