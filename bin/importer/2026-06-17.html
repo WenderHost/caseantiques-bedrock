@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Antiques — Auction Importer: Faster, Hands-Off Imports</title>
+<style>
+  :root{
+    --bg:#faf8f4; --paper:#ffffff; --ink:#23201b; --soft:#6f6557; --line:#e7e0d4;
+    --accent:#9a6f3a; --accent-d:#7c5829; --ok:#3f8f6b; --okbg:#e9f4ee;
+    --bad:#b4452f; --badbg:#f8ebe7; --warn:#9a7b2e; --warnbg:#f6efdc;
+    --code:#2c2822;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px 100px}
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.01em;line-height:1.2}
+  h1{font-size:34px;margin:0 0 6px}
+  h2{font-size:24px;margin:0 0 18px;padding-bottom:10px;border-bottom:2px solid var(--accent)}
+  h3{font-size:18px;margin:26px 0 8px}
+  p{margin:0 0 14px}
+  a{color:var(--accent-d)}
+  .masthead{padding:48px 0 30px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  .brand{font-family:Georgia,serif;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:18px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 26px;color:var(--soft);font-size:14px;margin-top:14px}
+  .meta b{color:var(--ink);font-weight:600}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 13px;border-radius:30px}
+  .badge.work{background:var(--warnbg);color:var(--warn)}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+  section{margin:46px 0 0}
+  .lead{font-size:18px;line-height:1.6}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:18px 0;box-shadow:0 1px 2px rgba(60,45,20,.04)}
+  .card.summary{border-left:4px solid var(--accent)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px;background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#f4eee3;color:var(--soft);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  tr:last-child td{border-bottom:none}
+  td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tick{color:var(--ok);font-weight:700}
+  .was{color:var(--bad);font-weight:600}
+  .now{color:var(--ok);font-weight:600}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:18px 0}
+  .kpi{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .kpi .n{font-family:Georgia,serif;font-size:30px;font-weight:700;color:var(--accent-d);line-height:1}
+  .kpi .l{color:var(--soft);font-size:13px;margin-top:7px}
+  .pill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em}
+  .pill.done{background:var(--okbg);color:var(--ok)}
+  .pill.work{background:var(--warnbg);color:var(--warn)}
+  ul{margin:6px 0 14px;padding-left:22px}
+  li{margin:6px 0}
+  code{background:#f0e9dc;color:var(--code);padding:2px 6px;border-radius:5px;font-size:13.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .note{color:var(--soft);font-size:14px}
+  /* Basecamp copy block */
+  .copybox{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:18px 0}
+  .copybar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#f4eee3;border-bottom:1px solid var(--line)}
+  .copybar span{font-size:13px;color:var(--soft);font-weight:600}
+  button.copy{font:inherit;font-size:14px;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:8px;padding:9px 18px;cursor:pointer;transition:background .15s}
+  button.copy:hover{background:var(--accent-d)}
+  button.copy.done{background:var(--ok)}
+  textarea.md{width:100%;border:none;resize:vertical;min-height:340px;padding:18px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.6;color:var(--code);background:#fffdf9;display:block}
+  textarea.md:focus{outline:none}
+  .toc{font-size:14px;color:var(--soft)}
+  .toc a{text-decoration:none;margin-right:18px;white-space:nowrap}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
+  @media print{body{background:#fff}.copybox,.toc{display:none}.card{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">Wenmark Digital</div>
+    <h1>Auction Importer: Faster, Hands-Off Imports</h1>
+    <p class="lead" style="color:var(--soft);margin:0">A plain-language summary of an upgrade we're rolling out to the auction-import tool on caseantiques.com — so importing a large sale no longer ties up a staff member and an open browser tab.</p>
+    <div class="meta">
+      <div><b>Client:</b> Case Antiques</div>
+      <div><b>Site:</b> caseantiques.com</div>
+      <div><b>Prepared:</b> June 17, 2026</div>
+      <div><b>Status:</b> <span class="badge work"><span class="dot"></span> Building &amp; deploying today</span></div>
+    </div>
+    <p class="toc" style="margin-top:22px">
+      <a href="#summary">Summary</a><a href="#problem">The problem</a><a href="#cause">Why it happens</a><a href="#fix">The upgrade</a><a href="#changes">What changes for you</a><a href="#basecamp">Copy for Basecamp ↓</a>
+    </p>
+  </header>
+
+  <section id="summary">
+    <div class="card summary">
+      <h3 style="margin-top:0">In one paragraph</h3>
+      <p style="margin-bottom:0">Importing a large auction into the website — a sale can have <b>200+ lots, each with 15&ndash;30 photos</b> — currently requires a staff member to open the Import screen and <b>leave it open and untouched</b> until the whole import finishes, which can take a long time. If that tab is closed, the computer goes to sleep, or the internet hiccups, the import stops partway. We're changing the importer so the work runs <b>on the server, in the background</b>: you pick the file, click Start, and can <b>close the tab and walk away</b>. The server finishes every lot and photo on its own, automatically retries anything that doesn't succeed the first time, and paces itself so it no longer strains the site. This work is being built and deployed today.</p>
+    </div>
+  </section>
+
+  <section id="problem">
+    <h2>The problem</h2>
+    <p>The current importer does all of its work <b>inside your browser tab</b>. As it runs, your open screen is literally what's driving the process — walking through each lot, then each of that lot's photos, one after another, loading every image into the website's Media Library.</p>
+    <p>For a big sale that means:</p>
+    <ul>
+      <li>A staff member has to <b>babysit the Import screen</b> — leaving it open, awake, and connected — for the entire run.</li>
+      <li>If the tab is closed, the laptop sleeps, or the Wi-Fi drops, <b>the import simply stops</b> wherever it was.</li>
+      <li>There's <b>no easy way to step away</b> and let it finish, and no clean way to check on it from another computer.</li>
+    </ul>
+    <p>It works for small batches, but it's slow and fragile for the large, photo-heavy sales that matter most.</p>
+  </section>
+
+  <section id="cause">
+    <h2>Why it happens (the cause)</h2>
+    <p>Two things are going on under the hood:</p>
+    <ul>
+      <li><b>The browser is doing the heavy lifting.</b> Because every step is driven from your open tab, the import can only go as fast as that one browser window — and it's only alive while the window is.</li>
+      <li><b>It asks the server to do too much at once.</b> When it reaches a lot's photos, it fires off requests for many of them simultaneously. Processing a single photo is expensive — the site generates several resized copies of each one — so these pile up, some time out, and the tool retries them, adding even more load. (This is the same kind of strain involved in the recent morning slowdowns, so easing it helps the whole site.)</li>
+    </ul>
+    <div class="kpis">
+      <div class="kpi"><div class="n">200+</div><div class="l">Lots in a large sale</div></div>
+      <div class="kpi"><div class="n">15&ndash;30</div><div class="l">Photos per lot</div></div>
+      <div class="kpi"><div class="n">Thousands</div><div class="l">Of photos to process per import</div></div>
+      <div class="kpi"><div class="n">1 tab</div><div class="l">Must stay open the entire time</div></div>
+    </div>
+  </section>
+
+  <section id="fix">
+    <h2>The upgrade</h2>
+    <p>We're moving the import off the browser and onto the <b>server's own background queue</b> — the same kind of reliable, behind-the-scenes processing that already handles other automated tasks on the site. The change does three things:</p>
+    <table>
+      <thead><tr><th>Change</th><th>What it does, in plain terms</th><th class="r">Status</th></tr></thead>
+      <tbody>
+        <tr><td><b>Runs in the background</b></td><td>You pick the file and click Start. The website hands the whole job to the server and immediately tells you it's queued — you can close the tab and walk away. The server works through every lot and photo on its own time.</td><td class="r"><span class="pill work">Today</span></td></tr>
+        <tr><td><b>Retries automatically</b></td><td>If a photo or lot doesn't import on the first try, the server quietly tries it again later instead of giving up. Imports that used to stall now finish on their own.</td><td class="r"><span class="pill work">Today</span></td></tr>
+        <tr><td><b>Paces the workload</b></td><td>Photos are processed steadily rather than in big bursts, so the import no longer strains the site for everyone else while it runs.</td><td class="r"><span class="pill work">Today</span></td></tr>
+      </tbody>
+    </table>
+    <p>You'll still get a <b>progress view</b> — but now it's optional. Open it whenever you like (even from a different computer) to see how far along the import is; close it whenever you like without affecting the import.</p>
+  </section>
+
+  <section id="changes">
+    <h2>What changes for you</h2>
+    <p>The day-to-day experience of importing a sale:</p>
+    <table>
+      <thead><tr><th>When importing a sale</th><th class="r">Before</th><th class="r">After</th></tr></thead>
+      <tbody>
+        <tr><td>Can you close the tab / walk away?</td><td class="r"><span class="was">No — must stay open</span></td><td class="r"><span class="now">Yes — close it anytime</span></td></tr>
+        <tr><td>If the tab closes or Wi-Fi drops</td><td class="r"><span class="was">Import stops partway</span></td><td class="r"><span class="now">Import keeps running</span></td></tr>
+        <tr><td>A photo fails to import</td><td class="r"><span class="was">Skipped / manual retry</span></td><td class="r"><span class="now">Retried automatically</span></td></tr>
+        <tr><td>Effect on the live site during import</td><td class="r"><span class="was">Heavy bursts</span></td><td class="r"><span class="now">Steady, gentle</span></td></tr>
+        <tr><td>Checking progress</td><td class="r"><span class="was">Only the open tab</span></td><td class="r"><span class="now">Anytime, any device</span></td></tr>
+      </tbody>
+    </table>
+    <div class="card" style="border-left:4px solid var(--warn)">
+      <p style="margin:0"><b>Current status:</b> We're building and deploying this today. Nothing about how you start an import changes — you'll still upload the CSV, choose the auction and photo folder, and click Start. The difference is everything after Start now happens on the server, hands-free. We'll confirm once it's live and tested on a full sale.</p>
+    </div>
+  </section>
+
+  <section id="basecamp">
+    <h2>Copy for Basecamp</h2>
+    <p class="note">Click <b>Copy Markdown</b>, then paste into a Basecamp message. Basecamp 5 renders the headings and tables automatically.</p>
+    <div class="copybox">
+      <div class="copybar">
+        <span>Basecamp message — Markdown</span>
+        <button class="copy" id="copyBtn">Copy Markdown</button>
+      </div>
+      <textarea class="md" id="md" readonly spellcheck="false"># Auction Importer — Faster, Hands-Off Imports
+
+**Prepared by:** Wenmark Digital
+**Date:** June 17, 2026
+**Status:** Building &amp; deploying today
+
+## What's changing
+
+Importing a large auction into the website — a sale can have **200+ lots, each with 15–30 photos** — currently requires a staff member to open the Import screen and **leave it open and untouched** until the whole import finishes. That can take a long time, and if the tab is closed, the computer sleeps, or the internet hiccups, the import stops partway.
+
+We're upgrading the importer so the work runs **on the server, in the background**. You pick the file, click Start, and can **close the tab and walk away** — the server finishes every lot and photo on its own.
+
+## Why it was a problem
+
+The current importer does all of its work inside your open browser tab — your screen is literally what drives the process, walking through each lot and each photo one at a time. Two consequences:
+
+- The import is only alive while that one tab is open, awake, and connected.
+- When it reaches a lot's photos, it asks the server to process many of them at once. Each photo is expensive (the site makes several resized copies), so they pile up, some time out, and get retried — adding even more load. (This is the same kind of strain behind the recent morning slowdowns, so easing it helps the whole site.)
+
+## The upgrade (today)
+
+| Change | What it does, in plain terms | Status |
+| --- | --- | --- |
+| Runs in the background | Click Start and the server takes over. You can close the tab and walk away; it works through every lot and photo on its own time. | 🛠 Today |
+| Retries automatically | If a photo or lot doesn't import the first time, the server tries again later instead of giving up. | 🛠 Today |
+| Paces the workload | Photos are processed steadily instead of in big bursts, so the import no longer strains the site while it runs. | 🛠 Today |
+
+You'll still get a progress view — but now it's optional. Open it anytime (even from another computer) to see how far along things are, and close it whenever you like without affecting the import.
+
+## What changes for you
+
+| When importing a sale | Before | After |
+| --- | --- | --- |
+| Can you close the tab / walk away? | No — must stay open | Yes — close it anytime |
+| If the tab closes or Wi-Fi drops | Import stops partway | Import keeps running |
+| A photo fails to import | Skipped / manual retry | Retried automatically |
+| Effect on the live site during import | Heavy bursts | Steady, gentle |
+| Checking progress | Only the open tab | Anytime, any device |
+
+Nothing about how you *start* an import changes — you'll still upload the CSV, choose the auction and photo folder, and click Start. The difference is that everything after Start now happens on the server, hands-free. We'll confirm once it's live and tested on a full sale.</textarea>
+    </div>
+  </section>
+
+  <footer>
+    Prepared by Wenmark Digital for Case Antiques · June 17, 2026 · Auction importer background-processing upgrade.
+  </footer>
+
+</div>
+
+<script>
+  const btn = document.getElementById('copyBtn');
+  const md = document.getElementById('md');
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(md.value).then(() => {
+      btn.textContent = '✓ Copied';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = 'Copy Markdown'; btn.classList.remove('done'); }, 1600);
+    }).catch(() => {
+      md.focus(); md.select();
+      btn.textContent = 'Press Cmd/Ctrl+C';
+    });
+  });
+</script>
+</body>
+</html>
