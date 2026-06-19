@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CDN legacy-paths redirect test — caseantiques.com</title>
+<style>
+  :root { --ok:#137333; --okbg:#e6f4ea; --bad:#a50e0e; --badbg:#fce8e6; --wait:#5f6368; --waitbg:#f1f3f4; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; color:#202124; background:#fff; }
+  header { position: sticky; top:0; background:#fff; border-bottom:1px solid #dadce0; padding:14px 20px; z-index:10; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:#5f6368; font-size:13px; }
+  .bar { display:flex; align-items:center; gap:16px; margin-top:10px; flex-wrap:wrap; }
+  .tally { font-weight:600; font-size:15px; }
+  .tally span { padding:2px 8px; border-radius:12px; }
+  .t-ok { color:var(--ok); background:var(--okbg); }
+  .t-bad { color:var(--bad); background:var(--badbg); }
+  .t-wait { color:var(--wait); background:var(--waitbg); }
+  button { font:inherit; font-weight:600; padding:8px 16px; border:1px solid #dadce0; border-radius:6px; background:#1a73e8; color:#fff; cursor:pointer; }
+  button:hover { background:#1765cc; }
+  main { padding:20px; max-width:1100px; margin:0 auto; }
+  section { margin-bottom:28px; }
+  h2 { font-size:15px; border-bottom:2px solid #e8eaed; padding-bottom:6px; }
+  .note { color:#5f6368; font-size:13px; margin:-4px 0 12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); gap:14px; }
+  .card { border:1px solid #dadce0; border-radius:8px; overflow:hidden; display:flex; flex-direction:column; }
+  .card.ok { border-color:var(--ok); }
+  .card.bad { border-color:var(--bad); }
+  .thumb { height:150px; background:#f8f9fa repeating-linear-gradient(45deg,#f8f9fa,#f8f9fa 10px,#f1f3f4 10px,#f1f3f4 20px); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .thumb img { max-width:100%; max-height:150px; display:block; }
+  .meta { padding:10px 12px; }
+  .badge { display:inline-block; font-weight:700; font-size:11px; letter-spacing:.04em; padding:2px 8px; border-radius:10px; }
+  .badge.ok { color:var(--ok); background:var(--okbg); }
+  .badge.bad { color:var(--bad); background:var(--badbg); }
+  .badge.wait { color:var(--wait); background:var(--waitbg); }
+  .label { font-weight:600; margin:6px 0 2px; }
+  .path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11.5px; color:#5f6368; word-break:break-all; }
+  .path a { color:#1a73e8; }
+  .expect { font-size:12px; color:#5f6368; margin-top:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CDN legacy-paths redirect test</h1>
+  <div class="sub">Open in an <b>Incognito</b> window. Run once <b>before</b> deploy (expect failures), then deploy <code>cdn-redirect-legacy-paths.conf</code>, then click <b>Re-test</b>.</div>
+  <div class="bar">
+    <div class="tally">
+      <span class="t-ok" id="okCount">0 loaded</span>
+      <span class="t-bad" id="badCount">0 failed</span>
+      <span class="t-wait" id="waitCount">0 pending</span>
+    </div>
+    <button onclick="runAll()">Re-test (bust cache)</button>
+    <span class="sub">To confirm the redirect target, click a path to open it directly, or watch DevTools → Network for the final <code>app/uploads/</code> → <code>wp-content/uploads/</code> flip.</span>
+  </div>
+</header>
+<main id="main"></main>
+
+<script>
+const BASE = "https://caseantiques.com";
+const groups = [
+  {
+    title: "Old auctions — should FAIL before deploy, LOAD after",
+    note: "After deploy each should render and its final URL flips to wp-content/uploads/auctions/.",
+    items: [
+      ["2012-10-06_auction", "/app/uploads/auctions/2012-10-06_auction/100_1-180x94.jpg"],
+      ["2014_01_25",         "/app/uploads/auctions/2014_01_25/100_1-180x82.jpg"],
+      ["2017-08-05-final",   "/app/uploads/auctions/2017-08-05-final/100_1-121x180.jpg"],
+      ["2019-07-13",         "/app/uploads/auctions/2019-07-13/100_1-1502x1080.jpg"],
+      ["jan_22_2011_final_cat","/app/uploads/auctions/jan_22_2011_final_cat/100_1-180x173.jpg"],
+      ["June_30_2012",       "/app/uploads/auctions/June_30_2012/100_1-112x180.jpg"],
+      ["2024_summer",        "/app/uploads/auctions/2024_summer/1000_1-180x119.jpeg"],
+      ["winter_2024_auction","/app/uploads/auctions/winter_2024_auction/100_1-1241x1536.jpg"],
+    ]
+  },
+  {
+    title: "Overlap pair — both must LOAD after deploy",
+    note: "Proves the longer name (_copy) is not shadowed by its prefix in the regex alternation.",
+    items: [
+      ["2014-04-30",      "/app/uploads/auctions/2014-04-30/3383140_1-1284x1080.jpg"],
+      ["2014-04-30_copy", "/app/uploads/auctions/2014-04-30_copy/3383140_1-180x151.jpg"],
+    ]
+  },
+  {
+    title: "Legacy-items — should FAIL before deploy, LOAD after",
+    note: "Lot 103 image, from the original 404 report; final URL flips to wp-content/uploads/legacy-items/.",
+    items: [
+      ["legacy-items / lot 103", "/app/uploads/legacy-items/103_1.jpg"],
+    ]
+  },
+  {
+    title: "CONTROL — current auction (regression check)",
+    note: "Must LOAD both before AND after, and must STAY on app/uploads/. If it only works because of the new rule, the scoping is over-matching.",
+    items: [
+      ["2026-winter (current)", "/app/uploads/auctions/2026-winter/0_1.jpeg"],
+    ]
+  },
+];
+
+const cards = [];
+function build() {
+  const main = document.getElementById("main");
+  groups.forEach(g => {
+    const sec = document.createElement("section");
+    sec.innerHTML = `<h2>${g.title}</h2><div class="note">${g.note}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    g.items.forEach(([label, path]) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const url = BASE + path;
+      card.innerHTML = `
+        <div class="thumb"><img alt=""></div>
+        <div class="meta">
+          <span class="badge wait">PENDING</span>
+          <div class="label">${label}</div>
+          <div class="path"><a href="${url}" target="_blank" rel="noopener">${path}</a></div>
+        </div>`;
+      grid.appendChild(card);
+      const img = card.querySelector("img");
+      cards.push({ card, img, url, badge: card.querySelector(".badge") });
+    });
+    sec.appendChild(grid);
+    main.appendChild(sec);
+  });
+}
+
+function setState(c, state) {
+  c.card.classList.remove("ok","bad");
+  c.badge.classList.remove("ok","bad","wait");
+  if (state === "ok")  { c.card.classList.add("ok");  c.badge.classList.add("ok");  c.badge.textContent = "LOADED ✓"; }
+  if (state === "bad") { c.card.classList.add("bad"); c.badge.classList.add("bad"); c.badge.textContent = "FAILED ✗"; }
+  if (state === "wait"){ c.badge.classList.add("wait"); c.badge.textContent = "PENDING"; }
+  tally();
+}
+function tally() {
+  let ok=0, bad=0, wait=0;
+  cards.forEach(c => {
+    const t = c.badge.textContent;
+    if (t.startsWith("LOADED")) ok++; else if (t.startsWith("FAILED")) bad++; else wait++;
+  });
+  document.getElementById("okCount").textContent  = ok + " loaded";
+  document.getElementById("badCount").textContent = bad + " failed";
+  document.getElementById("waitCount").textContent= wait + " pending";
+}
+function runAll() {
+  const cb = "cb=" + Date.now();
+  cards.forEach(c => {
+    setState(c, "wait");
+    c.img.onload  = () => setState(c, "ok");
+    c.img.onerror = () => setState(c, "bad");
+    c.img.src = c.url + (c.url.includes("?") ? "&" : "?") + cb;
+  });
+}
+
+build();
+runAll();
+</script>
+</body>
+</html>

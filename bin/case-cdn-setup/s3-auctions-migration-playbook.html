@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3 auctions migration playbook — caseantiques.com</title>
+<!--
+  SOURCE OF TRUTH for the gradual wp-content/uploads/auctions/ -> app/uploads/auctions/
+  consolidation. Claude reads/updates the JSON in <script id="playbook-data"> below.
+  To RESUME in a future session, tell Claude: "let's resume the S3 playbook".
+
+  Per-folder lifecycle:
+    pending  -> not yet copied
+    copied   -> synced to app/uploads/ and verified (count+size match, dryrun=0)   [Phase 1]
+    cutover  -> removed from nginx legacy alternation; now served from app/uploads/ [Phase 2]
+    deleted  -> wp-content/ copy removed                                            [Phase 3]
+  Deletes (Phase 3) are destructive and only happen with explicit per-batch sign-off.
+-->
+<script id="playbook-data" type="application/json">
+{
+"updated": "2026-06-19",
+"rate_per_sec": 53,
+"grand_total_objects": 1887070,
+"grand_total_gb": 534.3,
+"dirs": [
+{"folder":"oct_16th_auction","date":"≈2010-10-16","sort":20101016,"objects":null,"size":null,"status":"pending","note":"year unverified"},
+{"folder":"jan_22_2011_final_cat","date":"2011-01-22","sort":20110122,"objects":14811,"size":"1.5 GB","status":"pending","note":""},
+{"folder":"jan_22_2011_preview","date":"2011-01-22","sort":20110123,"objects":126,"size":"15.4 MB","status":"copied","note":"pilot"},
+{"folder":"may_21_2011","date":"2011-05-21","sort":20110521,"objects":21392,"size":"2.2 GB","status":"pending","note":""},
+{"folder":"oct_1_2011","date":"2011-10-01","sort":20111001,"objects":21625,"size":"2.5 GB","status":"pending","note":""},
+{"folder":"jan_28_2012_auction","date":"2012-01-28","sort":20120128,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"June_30_2012","date":"2012-06-30","sort":20120630,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2012-10-06_auction","date":"2012-10-06","sort":20121006,"objects":12867,"size":"1.4 GB","status":"copied","note":"timing test"},
+{"folder":"2012-10-06_preview","date":"2012-10-06","sort":20121007,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2013-01-26","date":"2013-01-26","sort":20130126,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2013-02-12_igavel","date":"2013-02-12","sort":20130212,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"May_18_2013_FINAL","date":"2013-05-18","sort":20130518,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2013-09-27_auction","date":"2013-09-27","sort":20130927,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2014_01_25","date":"2014-01-25","sort":20140125,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2014-04-30","date":"2014-04-30","sort":20140430,"objects":null,"size":null,"status":"pending","note":"overlap pair w/ _copy"},
+{"folder":"2014-04-30_copy","date":"2014-04-30","sort":20140431,"objects":null,"size":null,"status":"pending","note":"overlap pair"},
+{"folder":"2014-07-19","date":"2014-07-19","sort":20140719,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2014-09-25","date":"2014-09-25","sort":20140925,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2015-01-24","date":"2015-01-24","sort":20150124,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2015-04-15","date":"2015-04-15","sort":20150415,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2015_07_18","date":"2015-07-18","sort":20150718,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2015_10_29","date":"2015-10-29","sort":20151029,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2016-01-23","date":"2016-01-23","sort":20160123,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2016-04-48","date":"2016-04-48","sort":20160448,"objects":null,"size":null,"status":"pending","note":"invalid day in name (typo)"},
+{"folder":"2016-07-30","date":"2016-07-30","sort":20160730,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2016-10-22","date":"2016-10-22","sort":20161022,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2017-01-21","date":"2017-01-21","sort":20170121,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2017-04-22","date":"2017-04-22","sort":20170422,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2017-08-05","date":"2017-08-05","sort":20170805,"objects":null,"size":null,"status":"pending","note":"overlap pair w/ -final"},
+{"folder":"2017-08-05-final","date":"2017-08-05","sort":20170806,"objects":null,"size":null,"status":"pending","note":"overlap pair"},
+{"folder":"2017-10-21","date":"2017-10-21","sort":20171021,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2018-01-27","date":"2018-01-27","sort":20180127,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2018-07-14","date":"2018-07-14","sort":20180714,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2018-10-06","date":"2018-10-06","sort":20181006,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2019-01-26","date":"2019-01-26","sort":20190126,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2019-04-27","date":"2019-04-27","sort":20190427,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2019-07-13","date":"2019-07-13","sort":20190713,"objects":57619,"size":"14.1 GB","status":"pending","note":""},
+{"folder":"2019-10-05","date":"2019-10-05","sort":20191005,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2020-01-25","date":"2020-01-25","sort":20200125,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2020-07-11","date":"2020-07-11","sort":20200711,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2021-01-30","date":"2021-01-30","sort":20210130,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2021-07-24","date":"2021-07-24","sort":20210724,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2021-10-23","date":"2021-10-23","sort":20211023,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2022-01-29","date":"2022-01-29","sort":20220129,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2022-07-10","date":"2022-07-10","sort":20220710,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2022-10-08","date":"2022-10-08","sort":20221008,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2023-01-28","date":"2023-01-28","sort":20230128,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2023-05-23","date":"2023-05-23","sort":20230523,"objects":null,"size":null,"status":"pending","note":""},
+{"folder":"2023-09-05","date":"2023-09-05","sort":20230905,"objects":64063,"size":"29.4 GB","status":"pending","note":""},
+{"folder":"winter_2024_auction","date":"≈2024-01","sort":20240115,"objects":null,"size":null,"status":"pending","note":"season approx"},
+{"folder":"2024_summer","date":"≈2024-06","sort":20240601,"objects":null,"size":null,"status":"pending","note":"season approx"},
+{"folder":"2025_winter","date":"≈2025-01","sort":20250115,"objects":null,"size":null,"status":"pending","note":"season approx"}
+]
+}
+</script>
+<style>
+  :root{--ok:#137333;--okbg:#e6f4ea;--pend:#5f6368;--pendbg:#f1f3f4;--cut:#1a73e8;--cutbg:#e8f0fe;--del:#a50e0e;--delbg:#fce8e6;}
+  *{box-sizing:border-box;}
+  body{font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;color:#202124;background:#fafafa;}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid #dadce0;padding:14px 20px;z-index:10;}
+  h1{font-size:18px;margin:0 0 4px;}
+  .sub{color:#5f6368;font-size:13px;}
+  main{padding:20px;max-width:1080px;margin:0 auto;}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0;}
+  .stat{background:#fff;border:1px solid #dadce0;border-radius:8px;padding:8px 14px;}
+  .stat b{font-size:18px;display:block;}
+  .stat span{font-size:12px;color:#5f6368;}
+  .controls{background:#fff;border:1px solid #dadce0;border-radius:8px;padding:14px;margin-bottom:16px;}
+  .controls .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  button{font:inherit;font-weight:600;padding:7px 14px;border:1px solid #dadce0;border-radius:6px;background:#fff;color:#202124;cursor:pointer;}
+  button.primary{background:#1a73e8;color:#fff;border-color:#1a73e8;}
+  button:hover{filter:brightness(.97);}
+  input[type=number]{width:60px;padding:6px;border:1px solid #dadce0;border-radius:6px;font:inherit;}
+  .batchbox{margin-top:12px;padding:12px;background:#f8f9fa;border:1px dashed #bdc1c6;border-radius:8px;display:none;}
+  .batchbox.show{display:block;}
+  .batchbox textarea{width:100%;height:60px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;padding:8px;border:1px solid #dadce0;border-radius:6px;resize:vertical;}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dadce0;border-radius:8px;overflow:hidden;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid #eee;font-size:13px;}
+  th{background:#f8f9fa;font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#5f6368;}
+  tr.copied td,tr.cutover td,tr.deleted td{color:#80868b;}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .badge{display:inline-block;font-weight:700;font-size:11px;padding:2px 8px;border-radius:10px;}
+  .b-pending{color:var(--pend);background:var(--pendbg);}
+  .b-copied{color:var(--ok);background:var(--okbg);}
+  .b-cutover{color:var(--cut);background:var(--cutbg);}
+  .b-deleted{color:var(--del);background:var(--delbg);}
+  .note{color:#9aa0a6;font-size:11.5px;}
+  details{background:#fff;border:1px solid #dadce0;border-radius:8px;padding:10px 14px;margin-bottom:16px;}
+  summary{font-weight:600;cursor:pointer;}
+  code{font-family:ui-monospace,Menlo,monospace;background:#f1f3f4;padding:1px 5px;border-radius:4px;font-size:12.5px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>S3 auctions migration playbook</h1>
+  <div class="sub">Gradual <code>wp-content/uploads/auctions/</code> → <code>app/uploads/auctions/</code> consolidation. To resume in a new session, tell Claude: <b>"let's resume the S3 playbook"</b>.</div>
+</header>
+<main>
+  <div class="stats" id="stats"></div>
+
+  <details>
+    <summary>How this works (the per-folder lifecycle)</summary>
+    <ol>
+      <li><b>pending</b> → not yet copied.</li>
+      <li><b>copied</b> (Phase 1) → Claude runs <code>aws s3 sync</code> wp-content → app/uploads and verifies (object count + size match, <code>--dryrun</code> = 0). Non-destructive; visitors still served from wp-content via the nginx rule.</li>
+      <li><b>cutover</b> (Phase 2) → folder removed from the legacy alternation in <code>cdn-redirect-legacy-paths.conf</code> + nginx reload; now served from app/uploads. <i>You deploy nginx.</i></li>
+      <li><b>deleted</b> (Phase 3) → wp-content copy removed. Destructive — only with explicit sign-off, done last after the dust settles.</li>
+    </ol>
+    <p>Pick a batch below (oldest-first recommended), copy the instruction, and paste it to Claude. Claude runs Phase 1 and updates this file. Object counts shown as “—” are confirmed at copy time.</p>
+  </details>
+
+  <div class="controls">
+    <div class="row">
+      <span>Select oldest pending:</span>
+      <input type="number" id="nOldest" value="3" min="1" max="52">
+      <button onclick="selectOldest()">Select next N</button>
+      <button onclick="clearSel()">Clear</button>
+      <button class="primary" onclick="buildBatch()">Build instruction for Claude →</button>
+    </div>
+    <div class="batchbox" id="batchbox">
+      <div class="sub" id="batchSummary"></div>
+      <textarea id="batchText" readonly></textarea>
+      <button onclick="copyBatch()">Copy to clipboard</button>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th></th><th>#</th><th>Folder</th><th>Date</th><th class="num">Objects</th><th class="num">Size</th><th class="num">~Time</th><th>Status</th><th>Note</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</main>
+
+<script>
+const DATA = JSON.parse(document.getElementById('playbook-data').textContent);
+const RATE = DATA.rate_per_sec;
+const dirs = DATA.dirs.slice().sort((a,b)=>a.sort-b.sort);
+
+function fmtTime(objs){ if(objs==null) return "—"; const m=objs/RATE/60; return m<1?"<1 min":Math.round(m)+" min"; }
+function renderStats(){
+  const done = dirs.filter(d=>d.status!=='pending').length;
+  const copiedObjs = dirs.filter(d=>d.status!=='pending'&&d.objects).reduce((s,d)=>s+d.objects,0);
+  const remObjs = DATA.grand_total_objects - copiedObjs;
+  const remHr = (remObjs/RATE/3600).toFixed(1);
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><b>${done} / ${dirs.length}</b><span>folders done</span></div>
+    <div class="stat"><b>${(DATA.grand_total_objects/1e6).toFixed(2)}M</b><span>total objects</span></div>
+    <div class="stat"><b>${DATA.grand_total_gb} GB</b><span>total size</span></div>
+    <div class="stat"><b>~${remHr} hr</b><span>est. copy remaining @ ${RATE}/s</span></div>
+    <div class="stat"><b>${DATA.updated}</b><span>last updated</span></div>`;
+}
+function renderRows(){
+  const tb=document.getElementById('rows'); tb.innerHTML='';
+  dirs.forEach((d,i)=>{
+    const tr=document.createElement('tr'); tr.className=d.status;
+    const can=d.status==='pending';
+    tr.innerHTML=`
+      <td>${can?`<input type="checkbox" data-f="${d.folder}">`:''}</td>
+      <td class="num">${i+1}</td>
+      <td><code>${d.folder}</code></td>
+      <td>${d.date}</td>
+      <td class="num">${d.objects==null?'—':d.objects.toLocaleString()}</td>
+      <td class="num">${d.size||'—'}</td>
+      <td class="num">${fmtTime(d.objects)}</td>
+      <td><span class="badge b-${d.status}">${d.status}</span></td>
+      <td class="note">${d.note||''}</td>`;
+    tb.appendChild(tr);
+  });
+}
+function selectOldest(){
+  clearSel();
+  const n=parseInt(document.getElementById('nOldest').value)||0;
+  const pend=dirs.filter(d=>d.status==='pending').slice(0,n).map(d=>d.folder);
+  document.querySelectorAll('#rows input[type=checkbox]').forEach(cb=>{ if(pend.includes(cb.dataset.f)) cb.checked=true; });
+  buildBatch();
+}
+function clearSel(){ document.querySelectorAll('#rows input[type=checkbox]').forEach(cb=>cb.checked=false); document.getElementById('batchbox').classList.remove('show'); }
+function selected(){ return [...document.querySelectorAll('#rows input[type=checkbox]:checked')].map(cb=>cb.dataset.f); }
+function buildBatch(){
+  const sel=selected();
+  const box=document.getElementById('batchbox');
+  if(!sel.length){ box.classList.remove('show'); return; }
+  const known=dirs.filter(d=>sel.includes(d.folder)&&d.objects);
+  const objs=known.reduce((s,d)=>s+d.objects,0);
+  const unknown=sel.length-known.length;
+  const est=objs?`~${Math.round(objs/RATE/60)} min for ${objs.toLocaleString()} known objects`:'time TBD';
+  document.getElementById('batchSummary').textContent=
+    `${sel.length} folder(s) selected · ${est}${unknown?` · ${unknown} with unknown counts (confirmed at copy)`:''}`;
+  document.getElementById('batchText').value=
+    `Let's resume the S3 playbook — run Phase 1 (copy + verify) for this batch: ${sel.join(', ')}`;
+  box.classList.add('show');
+}
+function copyBatch(){ const t=document.getElementById('batchText'); t.select(); navigator.clipboard.writeText(t.value); }
+renderStats(); renderRows();
+</script>
+</body>
+</html>
