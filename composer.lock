@@ -1415,15 +1415,15 @@
         },
         {
             "name": "wpackagist-plugin/all-in-one-seo-pack",
-            "version": "4.9.7.2",
+            "version": "4.9.8",
             "source": {
                 "type": "svn",
                 "url": "https://plugins.svn.wordpress.org/all-in-one-seo-pack/",
-                "reference": "tags/4.9.7.2"
+                "reference": "tags/4.9.8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://downloads.wordpress.org/plugin/all-in-one-seo-pack.4.9.7.2.zip"
+                "url": "https://downloads.wordpress.org/plugin/all-in-one-seo-pack.4.9.8.zip"
             },
             "require": {
                 "composer/installers": "^1.0 || ^2.0"
