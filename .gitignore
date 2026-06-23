@@ -43,3 +43,4 @@ bin/nginx/
 bin/logs/*
 !bin/logs/AGENTS.md
 web/app/wflogs/
+web/app/mu-plugins/spinup-media-fallback.php
