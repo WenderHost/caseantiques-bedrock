@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Item CPT Image Order — Debugging Findings</title>
+<style>
+  :root{
+    --ink:#1d2327; --muted:#646970; --line:#dcdcde; --bg:#f6f7f7;
+    --blue:#2271b1; --red:#d63638; --amber:#996800; --amber-bg:#fcf9e8;
+    --green:#00a32a; --code-bg:#f0f0f1;
+  }
+  *{box-sizing:border-box}
+  body{
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); margin:0; background:var(--bg);
+  }
+  .wrap{max-width:1040px; margin:0 auto; padding:32px 24px 80px;}
+  header{border-bottom:3px solid var(--blue); padding-bottom:16px; margin-bottom:8px;}
+  h1{font-size:26px; margin:0 0 4px;}
+  h2{font-size:20px; margin:36px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line);}
+  h3{font-size:16px; margin:22px 0 6px;}
+  .meta{color:var(--muted); font-size:13px;}
+  .meta b{color:var(--ink);}
+  p{margin:10px 0;}
+  code{background:var(--code-bg); padding:1px 5px; border-radius:3px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13px;}
+  pre{background:#1d2327; color:#e6e6e6; padding:14px 16px; border-radius:6px; overflow:auto; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; line-height:1.5;}
+  pre .c{color:#7e8590;}
+  pre .k{color:#79b8ff;}
+  pre .s{color:#9ecbff;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px 22px; margin:14px 0;}
+  .callout{border-left:4px solid var(--amber); background:var(--amber-bg); padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;}
+  .callout.key{border-left-color:var(--red); background:#fcf0f1;}
+  .callout.ok{border-left-color:var(--green); background:#edfaef;}
+  table{border-collapse:collapse; width:100%; font-size:13px; margin:12px 0; background:#fff;}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top;}
+  th{background:#f0f0f1; font-weight:600;}
+  td.mono,th.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px;}
+  tr.divergent td:first-child{border-left:4px solid var(--red);}
+  .pill{display:inline-block; font-size:11px; font-weight:600; padding:1px 8px; border-radius:10px; white-space:nowrap;}
+  .pill.red{background:#fcf0f1; color:var(--red);}
+  .pill.amber{background:var(--amber-bg); color:var(--amber);}
+  .pill.blue{background:#e7f1f8; color:var(--blue);}
+  .stat-row{display:flex; gap:14px; flex-wrap:wrap; margin:14px 0;}
+  .stat{flex:1; min-width:130px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 16px;}
+  .stat .n{font-size:28px; font-weight:700; line-height:1;}
+  .stat .l{font-size:12px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:.04em;}
+  ol li,ul li{margin:5px 0;}
+  .log-entry{border-left:3px solid var(--blue); padding:2px 0 2px 16px; margin:18px 0;}
+  .log-entry .when{font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
+  footer{margin-top:48px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px;}
+  a{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Item CPT Image Order — Debugging Findings</h1>
+  <div class="meta">
+    Working dir: <b>bin/2026-06-23_debugging-item-cpt-order/</b><br>
+    View under investigation: <b><a href="https://caseantiques.test/auction/2026-summer/">https://caseantiques.test/auction/2026-summer/</a></b> (DataTables thumbnail view)<br>
+    Started: <b>2026-06-23</b> &nbsp;·&nbsp; Status: <span class="pill amber">Built &amp; tested on localdev — not committed/deployed</span>
+  </div>
+</header>
+
+<div class="callout ok">
+  <b>HANDOFF — where things stand (2026-06-23, end of day).</b>
+  <ul style="margin:8px 0 0">
+    <li><b>Root cause</b> (§8) understood: the importer left/zeroed <code>menu_order</code> (update-branch wipes it
+      via <code>wp_insert_attachment</code>; regex-fail on LA-id names). Long-standing, not a recent regression.</li>
+    <li><b>Importer fix</b> shipped (preserve <code>menu_order</code> on re-import) — stops new occurrences.</li>
+    <li><b>In-plugin tool</b> shipped: <em>Items → Image Order Audit</em>. Paginated auction list (10/page);
+      per-auction <b>Auto-fix</b> (backfill zeros from filename), <b>Normalize</b> (de-tie), drag <b>Reorder</b>,
+      <b>Make&nbsp;#1</b>, and an advisory <b>Merged-lots</b> section (lead not the newest set).</li>
+    <li><b>Merged-lot rule</b> (client decision): newest filename <em>series</em> leads (client additions win),
+      <code>{seq}</code> within. Normalize is series-based and only runs on tie/zero lots — never clobbers hand-ordered lots.</li>
+    <li><b>Data applied (localdev only):</b> client ran Auto-fix on 2026 Summer / Winter / 2025 Summer, and
+      Normalize on 2026 Summer; we re-fixed Lot 758. <b>Production untouched.</b></li>
+    <li><b>NOT done yet:</b> commit/deploy the plugin changes (localdev copy only); run the audit on production;
+      decide on the 4 merged-lead lots (254, 427, 439, 470); optionally a bulk path for merged lots.</li>
+    <li><b>Files:</b> <code>plugins/localdev-auctions-and-items/lib/classes/image-order-audit.php</code>,
+      <code>lib/js/image-order-audit.js</code>, importer fix in <code>lib/classes/auction-importer.php</code>.
+      CLI prototypes + this doc live in <code>bin/2026-06-23_debugging-item-cpt-order/</code>.</li>
+  </ul>
+</div>
+
+<div class="callout key">
+  <b>TL;DR.</b> The DataTables thumbnail picks the "first" image with
+  <code>ORDER BY menu_order ASC LIMIT 1</code> and <b>no unique tiebreaker</b>.
+  When the lowest <code>menu_order</code> is shared by 2+ images, MySQL returns an
+  arbitrary one — and the <code>LIMIT 1</code> plan can disagree with the full-list plan
+  the admin media grid uses. <b>17 of 1,320 lots</b> in <code>2026-summer</code> have tied
+  lowest <code>menu_order</code>; <b>4 are actively showing the wrong image right now</b>.
+</div>
+<div class="callout ok">
+  <b>Update (2026-06-23, later):</b> The client's drag-reorder in the <em>Add Media</em> dialog
+  <b>does work and persist</b> — confirmed on <b>15 lots</b> (see §5). Lot 274 was reordered live during
+  this investigation, which gave its images distinct <code>menu_order</code> 1–9 and <b>resolved its
+  thumbnail</b> (now correctly shows <code>274_4</code>, the chosen lead). An earlier claim here that
+  reorder "never persisted" was a <b>bug in our diagnostic script</b>, not reality — corrected below.
+</div>
+
+<h2>1. The reported symptom</h2>
+<p>
+  On the <code>/auction/2026-summer/</code> DataTables view, <b>Lot 274: Spanish Colonial
+  Carved Santos Bust of Christ</b> (<code>post_id=<a href="https://caseantiques.com/wp/wp-admin/post.php?post=765840&action=edit" target="_blank" rel="noopener">765840</a></code>) renders its thumbnail as:
+</p>
+<pre>&lt;img ... src="https://caseantiques.com/app/uploads/auctions/2026-summer/<b>274_5</b>-374x800.jpeg" ... alt="Lot 274: Spanish Colonial Carved Santos Bust of Christ"&gt;</pre>
+<p>
+  Expectation was <code>274_2.jpeg</code> — the image shown first in the admin
+  <em>Add Media → Uploaded to this post</em> grid. The working assumption was that the API
+  serves images by <code>menu_order</code>, set from the filename suffix at import (so
+  <code>274_2</code> → <code>menu_order = 2</code>) or by manual reorder.
+</p>
+
+<h2>2. Root cause</h2>
+
+<h3>2a. The query has no tiebreaker</h3>
+<p>
+  The thumbnail comes from <code>taxonomy.auction.php:271-278</code>
+  (<code>query_items_callback()</code>, the <code>wp_ajax_query_items</code> handler that feeds DataTables):
+</p>
+<pre><span class="c">// lib/classes/taxonomy.auction.php — generated SQL:</span>
+SELECT wp_posts.ID FROM wp_posts
+WHERE post_parent = 765840 AND post_type = <span class="s">'attachment'</span> ...
+ORDER BY wp_posts.menu_order ASC
+LIMIT 0, 1</pre>
+<p>
+  There is no secondary sort key (no <code>ID</code>, no <code>post_date</code>). When the
+  sort column ties, MySQL may return rows in any order, and that order can change with
+  <code>LIMIT</code> because the query planner chooses a different access path.
+</p>
+
+<h3>2b. Lot 274's data was tied at zero (original state)</h3>
+<p class="meta"><b>Note:</b> this is the state at the start of the investigation. Lot 274 has since been
+manually reordered (§5), so its live data is now distinct <code>1–9</code> and the thumbnail is fixed.
+The snapshot below is preserved to document the original bug.</p>
+<table>
+  <tr><th class="mono">attachment</th><th class="mono">menu_order</th><th class="mono">post_date</th></tr>
+  <tr><td class="mono">274_2, 274_7, 274_8, 274_4, 274_1, 274_6, 274_9, <b>274_5</b></td><td class="mono"><b>0</b> (×8)</td><td class="mono">20:38:13–16</td></tr>
+  <tr><td class="mono">274_3</td><td class="mono">3</td><td class="mono">20:38:00</td></tr>
+</table>
+<p>Proven directly via <code>wp eval</code> — same <code>ORDER BY</code>, different first row:</p>
+<ul>
+  <li><code>posts_per_page =&gt; -1</code> (full scan) &rarr; returns <b>274_2</b> first &nbsp;<span class="pill blue">what the admin grid shows</span></li>
+  <li><code>posts_per_page =&gt; 1</code> (<code>LIMIT 1</code>) &rarr; returns <b>274_5</b> first &nbsp;<span class="pill red">what the page shows</span></li>
+</ul>
+<div class="callout">
+  So the front-end thumbnail and the admin media grid disagree <b>purely by tie-breaking luck</b>.
+  Nothing is cached or stale — the query is simply non-deterministic. Even the "expected"
+  <code>274_2</code> is <em>not</em> backed by <code>menu_order</code> (it is <code>0</code>, same as the rest);
+  it only appears first in the modal by the same coincidence. If <code>menu_order</code> were
+  repaired to follow the filename, the lead image would become <b>274_1</b> (→ 1), not 274_2.
+</div>
+
+<h3>2c. Why the menu_order is wrong (the importer)</h3>
+<p>
+  <code>auction-importer.php:909,921</code> assigns <code>menu_order</code> from the filename —
+  but <b>only when the attachment is newly created</b>:
+</p>
+<pre><span class="c">// lib/classes/auction-importer.php (import_single_attachment)</span>
+preg_match( <span class="s">'/^([0-9]+[a-zA-Z]*)_([0-9]+)\.([a-zA-Z]+)/'</span>, $image, $matches );
+<span class="k">if</span> ( $attachment_id = $this-&gt;auction_object_exists( ... ) ) {
+    $attachment[<span class="s">'ID'</span>] = $attachment_id;
+    $update = <span class="k">true</span>;                              <span class="c">// existing attachment -&gt; menu_order NEVER set</span>
+} <span class="k">else</span> {
+    $attachment[<span class="s">'menu_order'</span>] = intval( $matches[2] );  <span class="c">// new only: 274_2 -&gt; 2</span>
+}</pre>
+<p>
+  If a lot is re-imported / partially replaced, existing attachments take the
+  <code>$update</code> path and keep whatever <code>menu_order</code> they had (the
+  default <code>0</code>). Lot 274 fits this: <code>274_3</code> was inserted ~13s earlier and
+  has the correct value (3), while the other 8 were left at 0.
+</p>
+
+<h2>3. Scan of the full <code>2026-summer</code> auction</h2>
+<p>
+  Read-only scan (<code>scan-menu-order.php</code>, writes nothing to the DB). A lot is
+  flagged when 2+ images share the <b>lowest</b> <code>menu_order</code> (non-deterministic
+  first image) and/or when the <code>LIMIT 1</code> thumbnail disagrees with the full-list gallery first.
+</p>
+<div class="stat-row">
+  <div class="stat"><div class="n">1,320</div><div class="l">Total lots</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)">1,303</div><div class="l">OK</div></div>
+  <div class="stat"><div class="n" style="color:var(--amber)">17</div><div class="l">Flagged (tied)</div></div>
+  <div class="stat"><div class="n" style="color:var(--red)">4</div><div class="l">Actively wrong now</div></div>
+</div>
+<p class="meta">Counts as of the latest scan, after Lot 274 was manually reordered (it is no longer flagged).
+The original scan read 18 flagged / 5 wrong.</p>
+
+<p>The 18 split into <b>two distinct root causes</b> that share the same symptom:</p>
+
+<h3>Category A — images left at <code>menu_order = 0</code> (6 lots)</h3>
+<p>The importer never assigned an order to some/all images (re-import / update path). These match the Lot 274 pattern.</p>
+<table>
+  <tr><th class="mono">post_id</th><th>Lot</th><th class="mono">imgs</th><th class="mono">menu_orders</th><th>gallery&nbsp;first</th><th>thumbnail&nbsp;shows</th><th></th></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765840&action=edit" target="_blank" rel="noopener">765840</a></td><td>274 Santos Bust of Christ</td><td class="mono">9</td><td class="mono">now 1–9</td><td class="mono">274_4</td><td class="mono">274_4</td><td><span class="pill" style="background:#edfaef;color:var(--green)">resolved (reordered)</span></td></tr>
+  <tr class="divergent"><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765841&action=edit" target="_blank" rel="noopener">765841</a></td><td>275 Santos Figure (St. Francis)</td><td class="mono">13</td><td class="mono">0×3, 1,3,4,6,7,8,10,11,12,13</td><td class="mono">275_5</td><td class="mono">275_2</td><td><span class="pill red">wrong now</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765680&action=edit" target="_blank" rel="noopener">765680</a></td><td>113 KPM Porcelain Plaque</td><td class="mono">12</td><td class="mono">0×12</td><td class="mono">113_1.jpeg</td><td class="mono">113_1.jpeg</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765848&action=edit" target="_blank" rel="noopener">765848</a></td><td>282 Satinwood Knife Box</td><td class="mono">10</td><td class="mono">0×5, 3,4,7,9,10</td><td class="mono">282_8</td><td class="mono">282_8</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765804&action=edit" target="_blank" rel="noopener">765804</a></td><td>237 Whiskey Jug + Miniature</td><td class="mono">20</td><td class="mono">0×3, 2..20</td><td class="mono">237_1</td><td class="mono">237_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765958&action=edit" target="_blank" rel="noopener">765958</a></td><td>392 Apothecary Jars</td><td class="mono">28</td><td class="mono">0×2, 3..28</td><td class="mono">392_1.jpeg</td><td class="mono">392_1.jpeg</td><td><span class="pill amber">latent</span></td></tr>
+</table>
+
+<h3>Category B — duplicate image series, tied at <code>menu_order = 1</code> (12 lots)</h3>
+<p>
+  These lots carry <b>two (or more) image series attached to the same post</b>, each numbered
+  from 1 — e.g. a <code>1088_*</code> set and a <code>1185_*</code> set — producing duplicated
+  <code>menu_order</code> values <code>[1,1,2,2,3,3,…]</code>. The <code>LIMIT 1</code> thumbnail
+  picks one of the two <code>menu_order = 1</code> images at random. This is a <em>different</em>
+  defect from Category A (likely merged/combined lots), worth tracking separately.
+</p>
+<table>
+  <tr><th class="mono">post_id</th><th>Lot</th><th class="mono">imgs</th><th>gallery&nbsp;first</th><th>thumbnail&nbsp;shows</th><th></th></tr>
+  <tr class="divergent"><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=762654&action=edit" target="_blank" rel="noopener">762654</a></td><td>1088 Turkman Bag Weavings</td><td class="mono">58</td><td class="mono">1088_1</td><td class="mono">1185_1</td><td><span class="pill red">wrong now</span></td></tr>
+  <tr class="divergent"><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=762352&action=edit" target="_blank" rel="noopener">762352</a></td><td>1089 Turkmen Weavings (×3)</td><td class="mono">54</td><td class="mono">1089_1</td><td class="mono">1172_1</td><td><span class="pill red">wrong now</span></td></tr>
+  <tr class="divergent"><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=758721&action=edit" target="_blank" rel="noopener">758721</a></td><td>1113 Miniature Portraits (×8)</td><td class="mono">52</td><td class="mono">1113_1</td><td class="mono">917_1</td><td><span class="pill red">wrong now</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=762617&action=edit" target="_blank" rel="noopener">762617</a></td><td>1086 Ersari Trapping &amp; Torba</td><td class="mono">28</td><td class="mono">1183_1</td><td class="mono">1183_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=761583&action=edit" target="_blank" rel="noopener">761583</a></td><td>1114 Portrait Miniatures (×4)</td><td class="mono">32</td><td class="mono">1118_1</td><td class="mono">1118_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=757613&action=edit" target="_blank" rel="noopener">757613</a></td><td>1079 Brass Bound Boxes (×3)</td><td class="mono">35</td><td class="mono">859_1</td><td class="mono">859_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=757592&action=edit" target="_blank" rel="noopener">757592</a></td><td>853 Boulle Marquetry Inkstand</td><td class="mono">51</td><td class="mono">858_1</td><td class="mono">858_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=756236&action=edit" target="_blank" rel="noopener">756236</a></td><td>1314 Wentworth Sculpture</td><td class="mono">16</td><td class="mono">749_1</td><td class="mono">749_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=754816&action=edit" target="_blank" rel="noopener">754816</a></td><td>774 Faience Items (×3)</td><td class="mono">46</td><td class="mono">660_1</td><td class="mono">660_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=750422&action=edit" target="_blank" rel="noopener">750422</a></td><td>758 Camille Faure Enamel Vase</td><td class="mono">20</td><td class="mono">381_1</td><td class="mono">381_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=750176&action=edit" target="_blank" rel="noopener">750176</a></td><td>1097 Steigel Flip Glass Tumblers</td><td class="mono">20</td><td class="mono">364_1</td><td class="mono">364_1</td><td><span class="pill amber">latent</span></td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=747115&action=edit" target="_blank" rel="noopener">747115</a></td><td>1122 William Dunlap Painting</td><td class="mono">30</td><td class="mono">183_1</td><td class="mono">183_1</td><td><span class="pill amber">latent</span></td></tr>
+</table>
+<p class="meta">
+  <span class="pill red">wrong now</span> = <code>LIMIT 1</code> thumbnail already diverges from the gallery first image.
+  <span class="pill amber">latent</span> = tie exists, but both queries currently happen to land on the same image; could flip at any time (DB restart, row changes, MySQL upgrade).
+</p>
+
+<h2>4. Code & data reference</h2>
+<table>
+  <tr><th>What</th><th class="mono">Location</th></tr>
+  <tr><td>DataTables thumbnail query (the bug)</td><td class="mono">plugins/localdev-auctions-and-items/lib/classes/taxonomy.auction.php:271-285</td></tr>
+  <tr><td>AJAX handler registration</td><td class="mono">…/taxonomy.auction.php:392-393 (<code>wp_ajax_query_items</code>)</td></tr>
+  <tr><td>Secondary "first image" helper</td><td class="mono">…/lib/classes/shortcodes.php:34-61 (<code>get_gallery_image</code>)</td></tr>
+  <tr><td>Item gallery (single view)</td><td class="mono">…/lib/fns/shortcodes.php:154-184 (<code>item_gallery</code>)</td></tr>
+  <tr><td>menu_order assignment at import</td><td class="mono">…/lib/classes/auction-importer.php:900-939 (<code>import_single_attachment</code>)</td></tr>
+  <tr><td>Archive template (renders table)</td><td class="mono">themes/centric-pro/taxonomy-auction.php:80-114</td></tr>
+  <tr><td>DataTables JS init</td><td class="mono">…/lib/js/datatables.js:186-280</td></tr>
+  <tr><td>Tie / divergence scan script</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/scan-menu-order.php</td></tr>
+  <tr><td>Reorder-evidence scan script</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/scan-reorder-evidence.php</td></tr>
+  <tr><td>Shared backfill-plan logic (read-only)</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/backfill-lib.php</td></tr>
+  <tr><td>Backfill preview (dry run)</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/preview-backfill.php</td></tr>
+  <tr><td>Backfill apply (dry-run by default)</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/apply-backfill.php</td></tr>
+  <tr><td>Cross-auction audit</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/audit-auctions.php</td></tr>
+  <tr><td>Client-facing summary</td><td class="mono">bin/2026-06-23_debugging-item-cpt-order/client-summary.html</td></tr>
+</table>
+<p class="meta"><b>wp-cli gotcha:</b> <code>wp eval-file</code> only forwards <em>positional</em> args into
+<code>$args</code> — it intercepts <code>--flags</code> itself. So these scripts take <b>bare keywords</b>:
+<code>v</code>, <code>json</code>, <code>apply</code>, <code>lot=113</code> — not <code>--apply</code> etc.</p>
+<p class="meta">Re-run the scan: <code>wp eval-file bin/2026-06-23_debugging-item-cpt-order/scan-menu-order.php 2026-summer</code> &nbsp;(add <code>--json</code> for machine output, or pass another auction slug).</p>
+
+<h2>5. Does the client's drag-and-drop reorder actually work? (workflow item #3)</h2>
+<p>
+  The client's historical intent is: (1) name images <code>{lot}_{seq}.(jpg|jpeg)</code>;
+  (2) importer sets <code>menu_order</code> from <code>{seq}</code>; (3) client can <b>drag-reorder</b>
+  images in the <em>Add Media</em> dialog. We tested whether #3 has ever taken effect.
+</p>
+<div class="callout ok">
+  <b>Finding (corrected): drag-reorder in the <em>Add Media</em> dialog DOES work and persist.</b>
+  Confirmed on <b>16 lots / 74 reordered images</b> in <code>2026-summer</code> (filename-based scan),
+  e.g. Lots 42, 44, 115, 126, 127, 133, 134, 162, 168, 173, 186, 192, 195, 274, 363 (plus Lot 15,
+  which also has an odd-named file). Each has distinct <code>menu_order</code> values that do <em>not</em>
+  match the filename <code>{seq}</code> — which can only come from a saved manual reorder.
+</div>
+<div class="callout key">
+  <b>How we initially got this wrong.</b> Our first run of <code>scan-reorder-evidence.php</code> reported
+  <b>0 hits</b> and we briefly concluded reorder "never persisted." That was a <b>bug in the script</b>, not
+  a fact about the data:
+  <ul style="margin:8px 0 0">
+    <li>PHP casts a purely-numeric array key like <code>"274"</code> to the <b>integer</b> <code>274</code>.
+      So <code>array_key_first($prefix_counts)</code> returned int <code>274</code>, while each image's
+      parsed <code>prefix</code> was the string <code>"274"</code>.</li>
+    <li>The dominant-prefix guard <code>if ($p['prefix'] !== $dominant) continue;</code> then compared
+      <code>"274" !== 274</code> with the <b>strict</b> operator → always <code>true</code> → <b>every image
+      was skipped</b>, on every lot. Result: a false "0 hits."</li>
+    <li>Fix: compare as strings (<code>(string)$p['prefix'] !== (string)$dominant</code>). Re-run → 67 hits / 15 lots.</li>
+  </ul>
+  Lesson: a "0 results" diagnostic deserves the same scrutiny as a positive one. The empirical proof —
+  the client reordering Lot 274 live and it sticking — is what exposed the bug.
+</div>
+<p>
+  Mechanism: the reorder fires WordPress core's <code>save-attachment-order</code> AJAX action, which
+  renumbers <em>all</em> of the post's attachments to <code>1..N</code> by drag position. That is why a
+  reordered lot has clean, distinct, deterministic <code>menu_order</code> — and why reordering a
+  previously-tied lot (like 274) instantly fixes its thumbnail.
+</p>
+<div class="callout ok">
+  <b>Does query hardening override #3? No.</b> The <code>ID ASC</code> tiebreaker is subordinate to
+  <code>menu_order</code> — it only orders images that already <em>tie</em>. A real reorder sets distinct
+  values, so the tiebreaker never fires and the client's order is honored exactly. Hardening and the
+  reorder workflow are fully compatible.
+</div>
+
+<h2>6. Candidate fixes (not yet applied)</h2>
+<p class="meta">These address two separable goals: making the <em>current</em> data display correctly, and making the client's
+intended workflow (#1–#3) actually function going forward.</p>
+<ol>
+  <li><b>Repair the data (primary fix for client intent).</b> Backfill <code>menu_order</code> from the filename
+    <code>{seq}</code> wherever it's <code>0</code> (Category A). This restores rule #2 directly and eliminates the
+    ties, so the "first image" becomes deterministic <em>by design</em> rather than by tiebreaker.</li>
+  <li><b>Harden the query (defensive backstop).</b> Add a stable secondary sort
+    <code>'orderby' =&gt; ['menu_order' =&gt; 'ASC', 'ID' =&gt; 'ASC']</code> in <code>taxonomy.auction.php</code>
+    (and <code>get_gallery_image</code> / <code>item_gallery</code> for thumbnail↔gallery consistency).
+    Does <b>not</b> override a real reorder — tiebreaker only. Safe to ship independently.</li>
+  <li><b>Reorder (#3) — already works, leave it.</b> Drag-reorder in the <em>Add Media</em> dialog persists via
+    <code>save-attachment-order</code> (see §5); the client can fix any lot's lead image themselves, and 15 lots
+    already rely on it. No code needed. Just confirm the <em>backfill</em> (#1) does <b>not</b> overwrite lots that
+    already carry a manual order — only touch images still at <code>0</code>.</li>
+  <li><b>Importer — preserve manual order (mostly already correct).</b> The update path deliberately leaves
+    <code>menu_order</code> untouched (the commented-out <code>auction-importer.php:624</code> block), which is what
+    protects a client's reorder across re-imports — keep that. The only gap is the never-reordered + zero-import
+    lots (Category A); those are covered by backfill (#1), not by changing import behavior.</li>
+  <li><b>Decide Category B policy.</b> Merged-series lots (<code>[1,1,2,2,…]</code>, alien filename prefix) need a rule
+    for which series leads and whether the importer should offset the second series' <code>menu_order</code>.
+    Distinct problem from Category A.</li>
+</ol>
+
+<h2>7. Backfill preview (dry run)</h2>
+<p>
+  <code>preview-backfill.php</code> computes — but does <b>not</b> apply — the changes needed to restore
+  rule #2 (<code>menu_order = {seq}</code>) for images left at <code>0</code>. Safety rules: only touch
+  images at <code>menu_order = 0</code>; skip any lot showing a manual reorder; flag Category B / odd-naming
+  lots for human review instead of guessing (backfilling to <code>{seq}</code> would collide there).
+</p>
+<div class="callout key">
+  <b>Important correction (2026-06-23):</b> the <code>{lot}_{seq}</code> convention lives in the <b>actual
+  filename</b> (<code>_wp_attached_file</code>), <em>not</em> the <code>post_title</code> — which for many lots is
+  the LiveAuctioneers id (e.g. file <code>113_10.jpeg</code> but title <code>9087223_10</code>, and the two
+  don't even align). Our first preview parsed <code>post_title</code> and mis-bucketed lots — most visibly
+  Lot 113, which is perfectly named and is now in the backfill set. We also had to tolerate WordPress'
+  <code>-scaled</code> suffix on large originals (<code>13_19-scaled.jpeg</code>). After both fixes,
+  <b>18,530 / 18,537</b> images parse cleanly. The numbers below are the corrected, filename-based run.
+</div>
+<div class="stat-row">
+  <div class="stat"><div class="n" style="color:var(--blue)">13</div><div class="l">Lots to backfill</div></div>
+  <div class="stat"><div class="n" style="color:var(--blue)">33</div><div class="l">Images to change</div></div>
+  <div class="stat"><div class="n" style="color:var(--green)">16</div><div class="l">Hand-ordered (no action)</div></div>
+  <div class="stat"><div class="n" style="color:var(--amber)">14</div><div class="l">Need review</div></div>
+  <div class="stat"><div class="n">1,277</div><div class="l">Clean (import order)</div></div>
+</div>
+<div class="callout ok">
+  <b>Classification rule (refined per client workflow).</b> A lot is flagged <em>only</em> if it has a real
+  ordering problem — an image at <code>menu_order = 0</code> (unset) or a <code>menu_order</code> tie. The
+  <b>filename is irrelevant when the order is already set</b>: the client routinely uploads later additions with
+  arbitrary names and orders them by hand in the dialog, so for those <code>menu_order</code> is the source of
+  truth. Earlier this section over-flagged 6 perfectly-ordered odd-named lots (439, 470, 1132, 1297, 1304, and
+  the hand-ordered 15); they are now correctly "no action."
+</div>
+<h3>Proposed changes (collision-free) — 13 lots, 33 images</h3>
+<table>
+  <tr><th class="mono">post_id</th><th>Lot</th><th class="mono"># imgs</th><th class="mono">set menu_order →</th></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765588&action=edit" target="_blank" rel="noopener">765588</a></td><td>21 Jacoulet Woodblock Prints</td><td class="mono">1</td><td class="mono">1</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765594&action=edit" target="_blank" rel="noopener">765594</a></td><td>27 Karhu Woodblock Print</td><td class="mono">1</td><td class="mono">1</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765680&action=edit" target="_blank" rel="noopener">765680</a></td><td>113 KPM Porcelain Plaque (Ruth)</td><td class="mono">12</td><td class="mono">1,2,3,4,5,6,7,8,9,10,11,12</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765804&action=edit" target="_blank" rel="noopener">765804</a></td><td>237 Whiskey Jug + Miniature</td><td class="mono">3</td><td class="mono">1,15,16</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765825&action=edit" target="_blank" rel="noopener">765825</a></td><td>259 Turkmen Prayer Rugs</td><td class="mono">1</td><td class="mono">1</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765841&action=edit" target="_blank" rel="noopener">765841</a></td><td>275 Santos Figure (St. Francis)</td><td class="mono">3</td><td class="mono">2,5,9</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765848&action=edit" target="_blank" rel="noopener">765848</a></td><td>282 Satinwood Knife Box</td><td class="mono">5</td><td class="mono">1,2,5,6,8</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=765958&action=edit" target="_blank" rel="noopener">765958</a></td><td>392 Apothecary Jars</td><td class="mono">2</td><td class="mono">1,2</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=766370&action=edit" target="_blank" rel="noopener">766370</a></td><td>806 Tiffany &amp; Co. Earrings</td><td class="mono">1</td><td class="mono">4</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=766372&action=edit" target="_blank" rel="noopener">766372</a></td><td>808 Gold &amp; Onyx Earrings/Bracelet</td><td class="mono">1</td><td class="mono">2</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=766373&action=edit" target="_blank" rel="noopener">766373</a></td><td>809 Herringbone Bracelet</td><td class="mono">1</td><td class="mono">4</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=766374&action=edit" target="_blank" rel="noopener">766374</a></td><td>810 Ruby and Diamond Ring</td><td class="mono">1</td><td class="mono">4</td></tr>
+  <tr><td class="mono"><a href="https://caseantiques.com/wp/wp-admin/post.php?post=766376&action=edit" target="_blank" rel="noopener">766376</a></td><td>812 Diamond Cluster Earrings</td><td class="mono">1</td><td class="mono">1</td></tr>
+</table>
+<p class="meta">Sorted numerically by lot. Collision-free because existing non-zero values already equal their
+<code>{seq}</code>; the proposed values only fill the gaps. E.g. Lot 282 has <code>3,4,7,9,10</code> already →
+adding <code>1,2,5,6,8</code> yields a clean <code>1..10</code>. Lot 113 (all 12 at <code>0</code>) becomes a clean <code>1..12</code>.</p>
+
+<h3>Needs review — 14 lots (can't auto-resolve)</h3>
+<ul>
+  <li><b>12 merged-series, still tied (Category B):</b> two real filename prefixes on one post and the
+    <code>menu_order</code> values currently tie — Lots 758 (381+758), 774 (660+774), 853 (853+858),
+    1079 (1079+859), 1086 (1086+1183), 1088 (1088+1185), 1089 (1089+1172), 1097 (364+1097), 1113 (1113+917),
+    1114 (1114+1118), 1122 (183+1122), 1314 (749+1314). Needs a lead-series rule. (Merged lots you've already
+    hand-ordered — e.g. 254, 427 — are not here; they're deterministic, so no action.)</li>
+  <li><b>1 odd-named, unordered:</b> Lot 265 — one image at <code>menu_order = 0</code> whose filename isn't
+    <code>{lot}_{seq}</code>, so its position can't be inferred. The client should order it by hand.</li>
+  <li><b>1 duplicate-seq:</b> Lot 715 — two images share the same <code>{seq}</code> with no zero to backfill.</li>
+</ul>
+<p class="meta">Preview: <code>wp eval-file bin/2026-06-23_debugging-item-cpt-order/preview-backfill.php 2026-summer</code>
+(add <code>v</code> for per-image lines, <code>json</code> for machine output).</p>
+
+<h3>Apply script — dry-run by default</h3>
+<p>
+  <code>apply-backfill.php</code> applies exactly this preview's 33 changes. It shares
+  <code>backfill-lib.php</code> with the preview, so the two can't drift, and it recomputes the plan live
+  (re-reading current data) every run. <b>It writes nothing unless you pass the <code>apply</code> keyword.</b>
+  Each write is guarded again right before it happens: the attachment still exists and belongs to the lot, its
+  <code>menu_order</code> is still <code>0</code> (never overwrites a value set since), and the target isn't
+  already taken (no collision). Anything failing a guard is skipped and reported. Only the BACKFILL bucket is
+  ever touched.
+</p>
+<pre><span class="c"># dry run (default) — all eligible lots</span>
+wp eval-file bin/2026-06-23_debugging-item-cpt-order/apply-backfill.php 2026-summer
+<span class="c"># dry run, one lot</span>
+wp eval-file .../apply-backfill.php 2026-summer lot=113
+<span class="c"># WRITE one lot (recommended first step)</span>
+wp eval-file .../apply-backfill.php 2026-summer lot=113 apply
+<span class="c"># WRITE all 13 eligible lots</span>
+wp eval-file .../apply-backfill.php 2026-summer apply</pre>
+<p class="meta">Status: built and dry-run-verified (33 changes, 0 guard-skips). <b>Not yet applied</b> — no DB writes performed.</p>
+
+<h2>8. Root cause of the zero menu_order (import)</h2>
+<p>
+  Audit across the 8 most recent auctions (<code>audit-auctions.php</code>): zero-<code>menu_order</code> images
+  appear in <b>every</b> auction back to 2023 at a steady low rate (5–175 images each, ~0.03–1.2%). <b>Not a
+  recent regression</b> — if a script change caused it, older auctions would be clean. Two long-standing
+  mechanisms, both confirmed:
+</p>
+<table>
+  <tr><th>#</th><th>Mechanism</th><th>Evidence</th></tr>
+  <tr>
+    <td>1</td>
+    <td><b>Re-import zeroes it.</b> The importer's update branch (<code>auction-importer.php:916-918</code>) calls
+      <code>wp_insert_attachment</code> with no <code>menu_order</code> key. WP core <code>wp_insert_post</code>
+      applies <code>menu_order =&gt; 0</code> from defaults <em>before</em> the update check and never reloads the
+      existing value — so reprocessing an existing image <b>wipes its order to 0</b>. The dev comment at
+      <code>:614-624</code> ("prevents menu_order from being overwritten") is backwards: omitting it <em>causes</em>
+      the overwrite.</td>
+    <td class="mono">post.php:4536 (defaults), 4561-4562 (update only reloads guid/status)</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><b>Regex-fail on first insert.</b> <code>menu_order = intval($matches[2])</code> from a regex requiring
+      <code>{digits}_{digits}.{ext}</code>. LiveAuctioneers-id titles (<code>9087223_10</code>, no extension) don't
+      match → <code>intval('') = 0</code>.</td>
+    <td class="mono">2026-summer: 44% of zero-mo images fail the regex vs 0.1% of non-zero</td>
+  </tr>
+</table>
+<p>
+  No post-import validation ensures every image has a sane, unique order. <b>Implication:</b> a future re-import
+  can re-zero images — <em>including lots staff hand-ordered</em> — so the durable fix belongs in the importer
+  (assign <code>menu_order</code> on the update path too / preserve it explicitly; add a validation pass), and an
+  ongoing detect-and-fix report is worthwhile.
+</p>
+
+<h2>Findings log</h2>
+<div class="log-entry">
+  <div class="when">2026-06-23 — initial diagnosis</div>
+  <p>
+    Traced Lot 274 thumbnail to the <code>menu_order ASC LIMIT 1</code> query with no tiebreaker;
+    proved non-determinism (full scan → 274_2, LIMIT 1 → 274_5). Identified importer only sets
+    <code>menu_order</code> on new attachments. Scanned all 1,320 lots in <code>2026-summer</code>:
+    18 flagged, 5 actively wrong, split into Category A (zeros, 6) and Category B (duplicate series, 12).
+    No code or data changed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — reorder (#3) investigation</div>
+  <p>
+    Asked whether query hardening would override the client's drag-reorder workflow. It won't (tiebreaker
+    only — §5). Tested whether the <em>Add Media</em> dialog reorder has ever persisted: scanned all 18,537
+    images via <code>scan-reorder-evidence.php</code> → <b>0 reorder hits</b>. Confirmed by code (no
+    <code>save-attachment-order</code>/sortable wiring in plugin or theme) and by WP core behavior (the
+    "Uploaded to this post" grid is a selection browser, not sortable). Conclusion (later <b>RETRACTED</b> — see
+    next entry): #3 has never functioned. Reordered the candidate-fix list to lead with data repair.
+    No code or data changed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — CORRECTION: reorder does work; the scan was buggy</div>
+  <p>
+    Client reported reordering Lot 274's images via the <em>Add Media</em> dialog and that it appeared to persist.
+    Re-checked <code>765840</code>: images now carry distinct <code>menu_order</code> 1–9 (post_modified today),
+    the thumbnail correctly shows <code>274_4</code>, and the lot dropped off the tie scan — yet
+    <code>scan-reorder-evidence.php</code> still reported 0 hits. Traced the contradiction to a PHP numeric-string
+    array-key cast: <code>array_key_first()</code> returned int <code>274</code> while the parsed prefix was string
+    <code>"274"</code>, so the strict-compare dominant-prefix guard (<code>!==</code>) skipped every image on every
+    lot. Fixed (compare as strings); re-ran → <b>67 reorder hits across 15 lots</b>. <b>This retracts the prior
+    entry:</b> the client's drag-reorder workflow (#3) works and persists. The earlier "0 hits" was our bug, not the
+    data's. Updated §1, §2b, §3, §5, and the fix list. Only our diagnostic script changed — no project code or data.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — backfill preview (dry run) built</div>
+  <p>
+    Wrote <code>preview-backfill.php</code> (read-only) and ran it against <code>2026-summer</code> (§7).
+    Result: <b>11 lots / 19 images</b> safe to backfill (<code>menu_order 0 → {seq}</code>, collision-free),
+    <b>14 lots skipped</b> as manually reordered, <b>26 lots flagged for review</b> (13 duplicate-series
+    Category B + 13 odd-naming), 1,269 already clean. No apply step written or run — nothing was written to the DB.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — CORRECTION: parse the filename, not post_title (+ handle -scaled)</div>
+  <p>
+    Client spot-checked the "odd-naming" list (and noted it wasn't sorted numerically). Investigating Lot 113
+    (<code>765680</code>) showed the cause: our scripts parsed <code>post_title</code>, which is often the
+    LiveAuctioneers id (<code>9087223_10</code>) while the real file is correctly named <code>113_10.jpeg</code> —
+    the two don't even align. Switched all parsing to the actual filename (<code>_wp_attached_file</code>). That
+    initially over-flagged because WordPress stores large originals as <code>{name}-scaled.jpeg</code>; loosened the
+    regex to capture the leading <code>{lot}_{seq}</code> regardless of WP suffixes. Parse rate went to
+    <b>18,530 / 18,537</b>. Re-ran: backfill <b>13 lots / 33 images</b> (Lot 113 and 392 moved in from review),
+    reordered <b>16 lots / 74 images</b>, review down to <b>22</b> (14 merged-series + 7 odd-file + 1 dup-seq).
+    Also added numeric-by-lot sorting to the preview output. Corrected §3 (113/392 labels), §5 (reorder counts),
+    and §7. Only diagnostic scripts changed — no project code or data.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — REFINEMENT: odd filenames are intentional client backfills</div>
+  <p>
+    Client clarified the workflow: lots are imported with <code>{lot}_{seq}</code> names, but later additions are
+    uploaded with arbitrary filenames and ordered by hand in the dialog — so for those <b><code>menu_order</code>
+    is the source of truth and the filename is irrelevant</b>. Checked the 7 "odd-naming" lots: 6 already have a
+    complete, distinct <code>menu_order</code> (e.g. Lot 470 = 1..19) — not problems at all. Reworked
+    <code>preview-backfill.php</code> to flag a lot <em>only</em> when it actually has an unset (<code>0</code>) or
+    tied <code>menu_order</code>, ignoring naming otherwise. New buckets: backfill <b>13 / 33</b> (unchanged),
+    hand-ordered no-action <b>16</b>, review <b>14</b> (12 still-tied merged-series + Lot 265 odd-unordered +
+    Lot 715 dup-seq), clean <b>1,277</b>. Already-ordered merged lots (254, 427) correctly dropped out of review.
+    No project code or data changed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — apply script built (dry-run by default)</div>
+  <p>
+    Extracted the classification into <code>backfill-lib.php</code> and refactored <code>preview-backfill.php</code>
+    to use it (output identical: 13/33, 16, 14, 1,277). Built <code>apply-backfill.php</code> on the same lib:
+    dry-run unless the <code>apply</code> keyword is passed, optional <code>lot=N</code> scoping, and a per-write
+    live guard (attachment still on the lot, <code>menu_order</code> still 0, target not taken). Hit a wp-cli
+    quirk — <code>eval-file</code> only forwards positional args, so switched all flags to bare keywords
+    (<code>apply</code>/<code>v</code>/<code>json</code>/<code>lot=N</code>). Dry-run verified: 33 changes across
+    13 lots, 0 guard-skips; confirmed Lot 113 still all-zero afterward. <b>Nothing applied yet</b> — no DB writes.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — cross-auction audit + root cause</div>
+  <p>
+    Tested the "recent import update caused it" theory by auditing the 8 newest auctions
+    (<code>audit-auctions.php</code>). Zero-<code>menu_order</code> is present in all of them back to 2023 at a
+    steady low rate → <b>not a recent regression</b>. Root cause is a cluster (§8): (1) the update branch +
+    <code>wp_insert_attachment</code> default zeroes <code>menu_order</code> on any reprocess (confirmed in WP core),
+    and (2) regex-fail on LA-id titles yields <code>intval('')=0</code> (44% of zero-mo images vs 0.1% of the rest).
+    Wrote a plain-English <code>client-summary.html</code>. No project code or data changed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — shipped: importer fix + in-plugin audit page</div>
+  <p>
+    <b>Importer fix</b> (<code>localdev-auctions-and-items/lib/classes/auction-importer.php</code>,
+    <code>import_single_attachment</code>): the update branch now passes <code>menu_order</code> explicitly —
+    preserving an existing value, falling back to the filename <code>{seq}</code> only when it's 0 — so a re-import
+    can no longer zero the order (root-cause mechanism #1). Also guarded the regex (no warning when it fails).
+    <b>New admin page</b> (<code>lib/classes/image-order-audit.php</code>, required from the main plugin file):
+    <em>Items → Image Order Audit</em>. Lists every auction with its blank-order count (fast cached SQL), and a
+    per-auction view splitting auto-fixable vs needs-a-human, with a nonce-protected, capability-gated
+    <em>Fix</em> button that applies the same guarded backfill. Lint-clean; plan matches the CLI prototype
+    (13/33, 14 review); list + detail pages render. Editions are in the <b>localdev</b> plugin copy — not yet
+    committed/deployed, and no live data fixed via the UI.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — reviewed client's screen-recording of the audit page</div>
+  <p>
+    Pulled the clip transcript + frames + DB state. <b>Auto-fix works:</b> client ran it on 3 auctions — 2026
+    Summer (34 blank-order &rarr; 0), 2026 Winter (62 &rarr; 10), 2025 Summer (68 &rarr; 22). Residuals are the
+    odd-named review lots (e.g. 2026 Winter Lot 899 = 10 LiveAuctioneers-id photos), <em>not</em> a stale count.
+    <b>Manual reorder did NOT save:</b> every review lot shows <code>modified-today=0</code>. Cause — the client
+    was <em>selecting</em> photos in "Add Media &rarr; Uploaded to this post" and clicking Update, which does not
+    set <code>menu_order</code>; only a real drag-reorder (Create Gallery / <code>save-attachment-order</code>)
+    does. The "RO1" files are LA-style <code>7502634_R01.jpg</code> (regex-unparseable &rarr; review).
+    <b>Shipped UI refinements</b> per feedback: number (#) column on both detail tables; light/dark <b>zebra
+    within the highlighted rows</b>; counts now lead with <b>lots</b> ("N lots need attention — X auto-fixable,
+    Y need a human"); list relabeled to "Lots needing attention"; removed the per-auction transient cache so
+    counts are never stale; corrected the needs-a-human guidance to "drag in Create Gallery" (not select+Update).
+    Still localdev-only; not committed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — fixed list/detail count mismatch</div>
+  <p>
+    Second recording flagged a real inconsistency: the list showed 2026 Winter = <b>1</b> lot needing attention
+    but the detail showed <b>9</b>. Cause: the list's count used a fast SQL proxy that only counted lots with a
+    blank (0) order, missing <b>tie/duplicate</b> lots (merged-series, duplicate-seq) that have no zeros. Replaced
+    it with a single GROUP BY query — a lot needs attention if it has a zero <em>or</em> a duplicate
+    <code>menu_order</code> — which matches the detail plan exactly. Verified across auctions (2026 Winter 1&rarr;9,
+    2026 Summer 0&rarr;12, both now == the plan's backfill+review). "Photos w/o order" column still counts literal
+    blank-order photos, so a tie-only auction can read e.g. "12 lots / 0 photos w/o order".
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — manual-reorder tools (Normalize / drag / Make #1) + pagination</div>
+  <p>
+    Paginated the auction list to <b>10 newest per page</b> (WP-native tablenav; also a perf win — SQL for 10
+    auctions, not ~60). Built three reorder tools for the "needs a human" lots, all nonce + <code>delete_posts</code>
+    gated: <b>(A) Normalize</b> — per-lot and "Normalize all", renumbers <code>1..N</code> deterministically;
+    <b>(B) Reorder</b> — a per-lot drag screen (jQuery-UI sortable thumbnails, AJAX save);
+    <b>(C) Make #1</b> — per-photo shortcut to lead. <b>Merged-lot rule</b> (client decision): the most-recently
+    uploaded set leads (client additions win), then by filename <code>{seq}</code> — verified on Lot 758
+    (<code>758_*</code> Jun additions lead, <code>381_*</code> Dec originals follow). All renders + the order
+    computation tested read-only; no DB writes performed by us (staff apply via the UI). Still localdev-only,
+    not committed.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — fixed Normalize rule (series-based) after client normalized 2026 Summer</div>
+  <p>
+    Client normalized 2026 Summer; only Lot 758 was in the batch and it came out <code>381_*</code>-first (originals
+    lead), the opposite of intent. Root cause: <code>normalized_order()</code> sorted by each photo's <b>global
+    upload date</b>, so a single series uploaded across two days got scrambled (e.g. Lot 826 would put
+    <code>826_2</code> before <code>826_1</code>). Fixed: rank by <b>filename series</b> (newest series leads =
+    client additions), keep each series grouped, order by <code>{seq}</code> within. Verified: Lot 826 →
+    <code>826_1,826_2,…</code>; Lot 758 → <code>758_1,…</code> then <code>381_*</code>. Re-applied to Lot 758 only
+    (now <code>758_1</code> leads). <b>Key guardrail confirmed:</b> a broad "make lead match the rule" pass would
+    clobber hand-ordered lots (274, 363, 195, 162, 44 — staff deliberately chose a non-<code>_1</code> lead), so
+    Normalize must stay limited to tie/zero review lots — which it is. OPcache <code>revalidate_freq=2</code> (not a
+    stale-code factor). Merged lots that are already distinct but not newest-series-first (254, 427, 470, 439) left
+    untouched — adjust per-lot via Reorder if desired.
+  </p>
+</div>
+<div class="log-entry">
+  <div class="when">2026-06-23 — added advisory "Merged lots — lead may not be your newest set" section</div>
+  <p>
+    New <code>merged_lead</code> bucket in <code>compute_plan()</code>: for a <em>deterministic</em> lot with 2+
+    filename series whose lead photo isn't from the newest series, list it (read-only, optional) with per-lot
+    Normalize + Reorder. Crucially it only flags genuinely-merged lots — single-series hand-ordered lots (274, 363,
+    195, 162, 44) are excluded, so manual orders are never surfaced as "wrong." For 2026 Summer it correctly lists
+    4: Lots 254, 427, 439, 470. Nothing auto-changes. End of session — code is built/tested on localdev, uncommitted.
+  </p>
+</div>
+
+<footer>
+  Generated 2026-06-23 · caseantiques.com · read-only investigation · no project code modified.
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auction Image Ordering — Summary</title>
+<style>
+  body{font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#222;background:#fafafa;margin:0;}
+  .wrap{max-width:760px;margin:0 auto;padding:40px 28px 72px;}
+  h1{font-size:27px;margin:0 0 6px;color:#7a1f2b;}
+  .sub{color:#666;font-size:15px;margin-bottom:30px;}
+  h2{font-size:19px;margin:34px 0 10px;color:#7a1f2b;}
+  p{margin:11px 0;}
+  .card{background:#fff;border:1px solid #e6e6e6;border-radius:10px;padding:20px 24px;margin:18px 0;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .good{border-left:4px solid #2e7d32;}
+  .note{border-left:4px solid #b8860b;background:#fffdf5;}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:15px;}
+  th,td{border:1px solid #e6e6e6;padding:8px 12px;text-align:left;}
+  th{background:#f5f0f0;}
+  .big{font-size:15px;}
+  ul{margin:10px 0;padding-left:22px;}
+  li{margin:6px 0;}
+  .tag{display:inline-block;background:#eef5ee;color:#2e7d32;font-size:12px;font-weight:600;padding:2px 9px;border-radius:11px;}
+  footer{margin-top:40px;color:#999;font-size:13px;border-top:1px solid #eee;padding-top:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Auction Item Image Ordering</h1>
+<div class="sub">A plain-English summary of what we found, what it means, and the plan. &nbsp;·&nbsp; June 2026</div>
+
+<h2>What you noticed</h2>
+<p>
+  On the auction results pages, a small number of lots were showing the <b>wrong lead photo</b> as their
+  thumbnail — and within those lots, the photos could appear out of order. For example, Lot 274 was showing
+  its 5th photo instead of the intended first one.
+</p>
+
+<h2>Why it happens</h2>
+<p>
+  Every lot's photos are arranged by a stored <b>"order number"</b> (1st, 2nd, 3rd…). For most images that
+  number is set correctly when the auction is imported. But for a small fraction of photos, the import
+  process <b>left the order number blank</b>. When several photos in a lot have a blank order, the website
+  can't reliably tell which one should come first — so it sometimes picks the wrong photo for the thumbnail.
+</p>
+
+<div class="card note">
+  <p style="margin:0">
+    <b>This is a long-standing quirk, not something that recently broke.</b> We checked the last several
+    auctions, and every one has a small number of affected photos — going back to 2023. It has always been a
+    tiny percentage; it just became visible on a specific lot.
+  </p>
+</div>
+
+<h2>How big is it?</h2>
+<p>In the current <b>2026 Summer</b> auction:</p>
+<table>
+  <tr><th>Photos in the auction</th><td>~18,500 across 1,320 lots</td></tr>
+  <tr><th>Photos with a blank order number</th><td>~34 (about 0.2%)</td></tr>
+  <tr><th>Lots affected</th><td>~14</td></tr>
+  <tr><th>Everything else</th><td>Correct</td></tr>
+</table>
+<p>Recent auctions look similar — typically a few dozen photos each. It's a small, steady trickle, never a flood.</p>
+
+<h2>The good news</h2>
+<div class="card good">
+  <ul style="margin:0">
+    <li><span class="tag">Already works</span> &nbsp;Reordering a lot's photos by dragging them in the
+      <em>Add Media</em> window <b>permanently fixes that lot</b>. Staff can correct any lot by hand today.</li>
+    <li><span class="tag">Built &amp; tested</span> &nbsp;We created a safe tool that automatically restores
+      the correct order for the clearly-fixable cases — <b>13 lots / 33 photos</b> in this auction — and
+      flags the small handful that need a quick human decision.</li>
+    <li><span class="tag">Careful</span> &nbsp;Nothing has been changed yet. Everything so far has been
+      measured without touching your data, and the fix is designed to <b>never overwrite ordering your staff
+      set by hand</b>.</li>
+  </ul>
+</div>
+
+<h2>The plan</h2>
+<ol>
+  <li><b>Apply the automatic fixes</b> for the clearly-fixable lots (with your go-ahead) — starting with one
+    lot so you can see the result, then the rest.</li>
+  <li><b>Hand-fix the few flagged lots</b> — a handful that need a person to choose the right first photo
+    (about a minute each).</li>
+  <li><b>Add an in-admin report</b> so your team can see affected lots for any auction and fix them with one
+    click, any time.</li>
+  <li><b>Strengthen the import process</b> so it stops leaving photos without an order number in the first
+    place — addressing the root cause, not just the symptoms.</li>
+</ol>
+
+<h2>Bottom line</h2>
+<p>
+  A small, long-standing import quirk left a fraction of photos without an order number, which occasionally
+  surfaced as the wrong thumbnail. It's well understood, the bulk is auto-fixable, the rest is a quick manual
+  touch, and we're adding tools plus an import fix so it stops recurring.
+</p>
+
+<footer>
+  Prepared by Wenmark Digital · caseantiques.com · all findings measured read-only; no data changed.
+</footer>
+
+</div>
+</body>
+</html>
