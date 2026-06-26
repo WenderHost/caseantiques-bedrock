@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 2 cutover + archive test — caseantiques.com CDN</title>
+<!--
+  Walkthrough for validating the wp-content -> app/uploads cutover on ONE legacy auction
+  folder, end to end, with zero downtime. Grounded in case-cdn-setup/README.md:
+    - disk XOR S3; nginx tries local disk, 302-redirects to S3 on 404
+    - live image URLs are on https://caseantiques.com/app/uploads/...
+    - a direct S3 GET returns 200 (present) or 403 (absent / no list perm)
+  Safe ordering: cut over FIRST (so serving moves to app/uploads while both copies still
+  exist), then archive the old wp-content copy LAST as a reversible Phase-3 dry run.
+  Folder + filename are inputs so this page works for any of the 52 folders.
+-->
+<style>
+  :root { --ok:#137333; --okbg:#e6f4ea; --bad:#a50e0e; --badbg:#fce8e6; --wait:#5f6368; --waitbg:#f1f3f4;
+          --info:#1a73e8; --infobg:#e8f0fe; --warnbg:#fef7e0; --warn:#b06000; --dangerbg:#fce8e6; --danger:#a50e0e; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin:0; color:#202124; background:#fff; }
+  header { position: sticky; top:0; background:#fff; border-bottom:1px solid #dadce0; padding:14px 20px; z-index:10; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:#5f6368; font-size:13px; }
+  .params { display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; align-items:flex-end; }
+  .params label { display:flex; flex-direction:column; font-size:12px; font-weight:600; color:#5f6368; gap:4px; }
+  .params input { font:13px ui-monospace, SFMono-Regular, Menlo, monospace; padding:6px 9px; border:1px solid #dadce0; border-radius:6px; min-width:280px; }
+  .params input:focus { outline:2px solid var(--info); border-color:var(--info); }
+  main { padding:20px; max-width:980px; margin:0 auto; }
+  section { margin-bottom:26px; border:1px solid #dadce0; border-radius:10px; overflow:hidden; }
+  .shead { display:flex; align-items:center; gap:10px; padding:12px 16px; background:#f8f9fa; border-bottom:1px solid #e8eaed; }
+  .stepnum { flex:none; width:26px; height:26px; border-radius:50%; background:#1a73e8; color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .stepnum.zero { background:#5f6368; }
+  .stepnum.decide { background:#137333; }
+  h2 { font-size:15px; margin:0; }
+  .maps { font-size:11.5px; color:#5f6368; margin-left:auto; font-weight:600; }
+  .sbody { padding:14px 16px; }
+  .sbody > p { margin:0 0 12px; }
+  pre { position:relative; background:#202124; color:#e8eaed; font:12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding:12px 40px 12px 14px; border-radius:8px; overflow-x:auto; margin:0 0 6px; white-space:pre; }
+  pre .cmt { color:#9aa0a6; }
+  .copy { position:absolute; top:7px; right:7px; font:11px -apple-system, sans-serif; font-weight:600; padding:3px 9px;
+          border:1px solid #5f6368; border-radius:5px; background:#3c4043; color:#e8eaed; cursor:pointer; }
+  .copy:hover { background:#5f6368; }
+  .copy.done { border-color:var(--ok); color:#81c995; }
+  .cap { font-size:12px; color:#5f6368; margin:0 0 14px; }
+  table.expect { border-collapse:collapse; width:100%; font-size:12.5px; margin:4px 0 14px; }
+  table.expect th, table.expect td { border:1px solid #e8eaed; padding:6px 9px; text-align:left; vertical-align:top; }
+  table.expect th { background:#f8f9fa; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:#5f6368; }
+  table.expect code { font-size:11.5px; }
+  .pill { display:inline-block; font-weight:700; font-size:11px; padding:1px 7px; border-radius:9px; }
+  .pill.g { color:var(--ok); background:var(--okbg); }
+  .pill.r { color:var(--bad); background:var(--badbg); }
+  .callout { border-radius:8px; padding:10px 13px; font-size:13px; margin:0 0 14px; border:1px solid; }
+  .callout.info { background:var(--infobg); border-color:#aecbfa; }
+  .callout.warn { background:var(--warnbg); border-color:#fdd663; }
+  .callout.danger { background:var(--dangerbg); border-color:#f6aea9; }
+  .callout b { display:block; margin-bottom:2px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#f1f3f4; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .done-row { display:flex; align-items:center; gap:8px; margin-top:6px; font-size:13px; color:#5f6368; }
+  .done-row input { width:16px; height:16px; }
+  /* live preview */
+  .preview { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  .thumb { width:170px; height:130px; flex:none; background:#f8f9fa repeating-linear-gradient(45deg,#f8f9fa,#f8f9fa 10px,#f1f3f4 10px,#f1f3f4 20px);
+           display:flex; align-items:center; justify-content:center; overflow:hidden; border-radius:8px; border:1px solid #dadce0; }
+  .thumb img { max-width:100%; max-height:130px; display:block; }
+  .thumb.ok { border-color:var(--ok); } .thumb.bad { border-color:var(--bad); }
+  .badge { display:inline-block; font-weight:700; font-size:11px; letter-spacing:.04em; padding:2px 8px; border-radius:10px; }
+  .badge.ok { color:var(--ok); background:var(--okbg); } .badge.bad { color:var(--bad); background:var(--badbg); } .badge.wait { color:var(--wait); background:var(--waitbg); }
+  button.act { font:inherit; font-weight:600; padding:7px 14px; border:1px solid #dadce0; border-radius:6px; background:#1a73e8; color:#fff; cursor:pointer; }
+  button.act:hover { background:#1765cc; }
+  .mapbox { font-size:12.5px; }
+  .mapbox table { border-collapse:collapse; width:100%; }
+  .mapbox td { border:1px solid #e8eaed; padding:6px 9px; vertical-align:top; }
+  .mapbox td:first-child { color:#5f6368; width:46%; }
+  .warnmissing { color:var(--bad); font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Phase 2 cutover + archive test</h1>
+  <div class="sub">Validate the <code>wp-content → app/uploads</code> cutover on one folder, end to end, <b>with zero downtime</b>. Test from a terminal with <code>curl</code> (or an Incognito window) so cached 302s/images can't mislead you.</div>
+  <div class="params">
+    <label>Folder
+      <input id="inFolder" value="jan_22_2011_preview" spellcheck="false">
+    </label>
+    <label>Representative filename <span style="font-weight:400">(from Step 0)</span>
+      <input id="inFile" placeholder="e.g. 100_1-180x150.jpg" spellcheck="false">
+    </label>
+  </div>
+</header>
+<main id="main"></main>
+
+<script>
+const PROFILE = "caseantiques";
+const BUCKET  = "cdn.caseantiques.com";
+const SITE    = "https://caseantiques.com";
+const S3      = "https://s3.amazonaws.com/" + BUCKET;
+const CONF    = "bin/nginx/server/cdn-redirect-legacy-paths.conf";
+
+// Each step: number, css class for the bullet, title, original-step mapping, body builder.
+// Body uses {FOLDER}/{FILE} tokens substituted at render time.
+const steps = [
+  {
+    n:"0", cls:"zero", title:"Pick a representative file (read-only)", map:"setup",
+    html:`
+      <p>List the legacy copy and copy one filename into the <b>Representative filename</b> box up top. Every command on this page rewrites itself to use it.</p>
+      <pre data-cmd>aws --profile ${PROFILE} s3 ls s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}/ | head</pre>
+      <div class="callout info"><b>Why a real file</b>The redirect is keyed on the folder, but you can only see a 200/403 with an actual object key. A small thumbnail (e.g. a <code>-180x…</code> size) is fine.</div>
+    `
+  },
+  {
+    n:"1", cls:"", title:"Baseline — prove it's currently served from the legacy wp-content copy", map:"your step 2, made non-destructive",
+    html:`
+      <p>This is your "prove the redirect sources from wp-content" idea — but you get the proof for free by reading the <b>redirect target</b>, no rename and no downtime. The <span class="pill g">302</span> is expected at every stage; the signal is <i>where it points</i>.</p>
+      <pre data-cmd><span class="cmt"># Live URL — what the site actually serves. Read the redirect TARGET.</span>
+curl -s -o /dev/null -w "%{http_code}  ->  %{redirect_url}\\n" \\
+  "${SITE}/app/uploads/auctions/{FOLDER}/{FILE}"
+
+<span class="cmt"># Follow it to the end — expect a final 200.</span>
+curl -sIL "${SITE}/app/uploads/auctions/{FOLDER}/{FILE}" | tail -1
+
+<span class="cmt"># Confirm BOTH S3 copies exist (Phase 1 made the app/uploads one).</span>
+curl -s -o /dev/null -w "wp-content : %{http_code}\\n" "${S3}/wp-content/uploads/auctions/{FOLDER}/{FILE}"
+curl -s -o /dev/null -w "app/uploads: %{http_code}\\n" "${S3}/app/uploads/auctions/{FOLDER}/{FILE}"</pre>
+      <table class="expect">
+        <tr><th>Check</th><th>Expected</th><th>Means</th></tr>
+        <tr><td>Live URL</td><td><code>302 -&gt; ${S3}/<b>wp-content</b>/uploads/auctions/{FOLDER}/{FILE}</code></td><td>Still legacy-served. Target = <b>wp-content</b>. (Also proves the file isn't on local disk — <code>try_files</code> fell through.)</td></tr>
+        <tr><td>Follow</td><td><span class="pill g">200</span></td><td>Bytes resolve on S3.</td></tr>
+        <tr><td>S3 wp-content</td><td><span class="pill g">200</span></td><td>Legacy copy present.</td></tr>
+        <tr><td>S3 app/uploads</td><td><span class="pill g">200</span></td><td>Phase 1 copy present — the cutover target.</td></tr>
+      </table>
+    `
+  },
+  {
+    n:"2", cls:"", title:"Cut over — remove this folder from the nginx legacy alternation, deploy, reload", map:"your step 3, corrected",
+    html:`
+      <div class="callout warn"><b>Not "remove the rule."</b>Removing the whole <code>location</code> block cuts over all 52 folders at once. You only remove this one folder's token from the alternation list.</div>
+      <p>In <code>${CONF}</code>, find the regex <code>location ~ "^/app/uploads/auctions/(…)/.*$"</code> and delete the token <code>{FOLDER}|</code> (the name <b>and</b> its trailing pipe) from the alternation.</p>
+      <pre data-cmd><span class="cmt"># Optional sed (review the diff after — names are listed longest-first, pipe-delimited):</span>
+sed -i.bak 's/{FOLDER}|//' ${CONF}
+git -C bin/nginx diff -- server/cdn-redirect-legacy-paths.conf</pre>
+      <div class="callout info"><b>If this folder is the LAST token in the list</b>there's no trailing pipe — delete the <i>leading</i> <code>|{FOLDER}</code> instead, or you'll leave a dangling <code>|</code>.</div>
+      <p>Deploy to the server and reload (per README §5):</p>
+      <pre data-cmd><span class="cmt"># copy local file -> /etc/nginx/sites-available/caseantiques.com/server/cdn-redirect-legacy-paths.conf, then:</span>
+sudo nginx -t
+sudo systemctl reload nginx</pre>
+      <p>Re-run the live-URL check. The redirect target must now <b>flip to app/uploads</b>:</p>
+      <pre data-cmd>curl -s -o /dev/null -w "%{http_code}  ->  %{redirect_url}\\n" \\
+  "${SITE}/app/uploads/auctions/{FOLDER}/{FILE}"
+curl -sIL "${SITE}/app/uploads/auctions/{FOLDER}/{FILE}" | tail -1</pre>
+      <table class="expect">
+        <tr><th>Check</th><th>Expected</th><th>Means</th></tr>
+        <tr><td>Live URL</td><td><code>302 -&gt; ${S3}/<b>app/uploads</b>/auctions/{FOLDER}/{FILE}</code></td><td>Cutover worked. Target flipped to <b>app/uploads</b> (fell through to <code>cdn-redirect.conf</code>'s catch-all).</td></tr>
+        <tr><td>Follow</td><td><span class="pill g">200</span></td><td>Served from the Phase 1 copy. Site never broke — both copies still exist.</td></tr>
+      </table>
+      <div class="callout warn"><b>Still pointing at wp-content?</b>Either the reload didn't take (re-check <code>nginx -t</code> output and that the file actually deployed), or the token wasn't fully removed (look for a stray <code>{FOLDER}</code> or a doubled <code>||</code>).</div>
+    `
+  },
+  {
+    n:"3", cls:"", title:"Archive dry-run — move the old wp-content copy aside (reversible), prove nothing needs it", map:"your steps 1+2, moved last so the site never breaks",
+    html:`
+      <div class="callout danger"><b>Destructive half — sign-off required.</b>An S3 "rename" is a server-side copy <i>then a delete</i>. This is reversible (move it back), but the delete is exactly the kind of op the standing rule says to confirm first.</div>
+      <pre data-cmd><span class="cmt"># Reversible "rename": copy-then-delete, no 2x footprint.</span>
+aws --profile ${PROFILE} s3 mv \\
+  "s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}/" \\
+  "s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}_backup/" \\
+  --recursive</pre>
+      <pre data-cmd><span class="cmt"># Live URL must STILL be 200 (served from app/uploads, unaffected by the archive).</span>
+curl -sIL "${SITE}/app/uploads/auctions/{FOLDER}/{FILE}" | tail -1
+
+<span class="cmt"># Old wp-content object now absent. README: S3 returns 403 (not 404) for absent.</span>
+curl -s -o /dev/null -w "wp-content now: %{http_code}\\n" \\
+  "${S3}/wp-content/uploads/auctions/{FOLDER}/{FILE}"</pre>
+      <table class="expect">
+        <tr><th>Check</th><th>Expected</th><th>Means</th></tr>
+        <tr><td>Live URL</td><td><span class="pill g">200</span></td><td>Cutover is genuinely sourcing from app/uploads — the old copy is now dead weight.</td></tr>
+        <tr><td>S3 wp-content</td><td><span class="pill r">403</span></td><td>Absent (403, not 404, per README §6). Confirms the rename took.</td></tr>
+      </table>
+      <div class="callout info"><b>This is your Phase 3 rehearsal.</b>A green 200 here with the old copy gone is the proof that deleting the wp-content copies for real is safe — for this folder and, by the same mechanism, the rest.</div>
+    `
+  },
+  {
+    n:"4", cls:"decide", title:"Decide — make it permanent, or roll the whole test back", map:"cleanup",
+    html:`
+      <p><b>A) Make permanent (real Phase 3 delete)</b> — only once you're satisfied. Then flip this folder <code>cutover → deleted</code> in the migration playbook.</p>
+      <pre data-cmd>aws --profile ${PROFILE} s3 rm \\
+  "s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}_backup/" --recursive</pre>
+      <p><b>B) Roll back to the original state</b> — restore the S3 copy, then revert the nginx change.</p>
+      <pre data-cmd><span class="cmt"># 1) restore the old S3 copy</span>
+aws --profile ${PROFILE} s3 mv \\
+  "s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}_backup/" \\
+  "s3://${BUCKET}/wp-content/uploads/auctions/{FOLDER}/" --recursive
+
+<span class="cmt"># 2) restore the nginx alternation, then deploy + reload</span>
+git -C bin/nginx checkout -- server/cdn-redirect-legacy-paths.conf
+<span class="cmt"># copy back to the server include dir, then:</span>
+sudo nginx -t && sudo systemctl reload nginx</pre>
+      <div class="callout info"><b>Either way, record it.</b>Permanent → mark <code>{FOLDER}</code> as <code>deleted</code> in <code>s3-auctions-migration-playbook.html</code>. Cutover-but-kept → mark it <code>cutover</code>.</div>
+    `
+  },
+];
+
+function render() {
+  const folder = (document.getElementById("inFolder").value || "").trim() || "{FOLDER}";
+  const fileRaw = (document.getElementById("inFile").value || "").trim();
+  const file = fileRaw || "<FILE>";
+  const sub = s => s.replaceAll("{FOLDER}", folder).replaceAll("{FILE}", file);
+
+  const main = document.getElementById("main");
+  main.innerHTML = "";
+
+  // Mapping box
+  const mapSec = document.createElement("section");
+  mapSec.innerHTML = `
+    <div class="shead"><h2>Your 4 steps → this walkthrough (reordered for zero downtime)</h2></div>
+    <div class="sbody mapbox">
+      <p style="margin-top:0">Your original plan renamed the live source <i>first</i>, which 404s the folder's images for real visitors until the nginx reload. Same proofs, no outage — by cutting over before touching the old copy:</p>
+      <table>
+        <tr><td>① rename wp-content aside</td><td>→ <b>Step 3</b> (last, after cutover — reversible <code>s3 mv</code>)</td></tr>
+        <tr><td>② confirm old URL 404s</td><td>→ folded into <b>Step 1</b> (read the 302 target) &amp; <b>Step 3</b> (S3 403)</td></tr>
+        <tr><td>③ remove nginx redirect rule</td><td>→ <b>Step 2</b> (remove just this folder's token; deploy + reload)</td></tr>
+        <tr><td>④ URL serves from app/uploads</td><td>→ <b>Step 2</b> verify (redirect target flips to app/uploads)</td></tr>
+      </table>
+    </div>`;
+  main.appendChild(mapSec);
+
+  // Live preview
+  const pv = document.createElement("section");
+  pv.innerHTML = `
+    <div class="shead"><h2>Live preview</h2><span class="maps">caches busted on each check</span></div>
+    <div class="sbody">
+      <div class="preview">
+        <div class="thumb" id="pvThumb"><img id="pvImg" alt=""></div>
+        <div>
+          <div><span class="badge wait" id="pvBadge">PENDING</span></div>
+          <div class="path" style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#5f6368;margin:8px 0;word-break:break-all"></div>
+          <button class="act" id="pvBtn">Check live URL (bust cache)</button>
+          <div class="cap" id="pvNote" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>`;
+  main.appendChild(pv);
+  const liveUrl = `${SITE}/app/uploads/auctions/${folder}/${file}`;
+  pv.querySelector(".path").textContent = liveUrl;
+  const pvImg = pv.querySelector("#pvImg"), pvBadge = pv.querySelector("#pvBadge"),
+        pvThumb = pv.querySelector("#pvThumb"), pvNote = pv.querySelector("#pvNote");
+  function setPv(state){
+    pvThumb.classList.remove("ok","bad"); pvBadge.classList.remove("ok","bad","wait");
+    if(state==="ok"){ pvThumb.classList.add("ok"); pvBadge.classList.add("ok"); pvBadge.textContent="LOADED ✓"; pvNote.textContent="Browser followed the 302 to S3 and rendered the image."; }
+    if(state==="bad"){ pvThumb.classList.add("bad"); pvBadge.classList.add("bad"); pvBadge.textContent="FAILED ✗"; pvNote.textContent="Did not load — expected before cutover only if you've already archived the wp-content copy. Use curl to read the exact redirect target."; }
+    if(state==="wait"){ pvBadge.classList.add("wait"); pvBadge.textContent="PENDING"; pvNote.textContent=""; }
+  }
+  pv.querySelector("#pvBtn").onclick = () => {
+    if(!fileRaw){ pvNote.innerHTML='<span class="warnmissing">Set a representative filename first (Step 0).</span>'; return; }
+    setPv("wait");
+    pvImg.onload = ()=>setPv("ok"); pvImg.onerror = ()=>setPv("bad");
+    pvImg.src = liveUrl + (liveUrl.includes("?")?"&":"?") + "cb=" + Date.now();
+  };
+
+  // Steps
+  steps.forEach(st => {
+    const sec = document.createElement("section");
+    sec.innerHTML = `
+      <div class="shead">
+        <div class="stepnum ${st.cls}">${st.n}</div>
+        <h2>${st.title}</h2>
+        <span class="maps">${st.map}</span>
+      </div>
+      <div class="sbody">${sub(st.html)}</div>`;
+    main.appendChild(sec);
+  });
+
+  // Copy buttons
+  main.querySelectorAll("pre[data-cmd]").forEach(pre => {
+    const btn = document.createElement("button");
+    btn.className = "copy"; btn.textContent = "copy";
+    btn.onclick = () => {
+      navigator.clipboard.writeText(pre.innerText.replace(/ /g," ")).then(()=>{
+        btn.textContent = "copied ✓"; btn.classList.add("done");
+        setTimeout(()=>{ btn.textContent="copy"; btn.classList.remove("done"); }, 1400);
+      });
+    };
+    pre.appendChild(btn);
+  });
+}
+
+document.getElementById("inFolder").addEventListener("input", render);
+document.getElementById("inFile").addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
