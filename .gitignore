@@ -44,3 +44,4 @@ bin/logs/*
 !bin/logs/AGENTS.md
 web/app/wflogs/
 web/app/mu-plugins/spinup-media-fallback.php
+bin/2026-06-23_debugging-item-cpt-order/
