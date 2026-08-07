@@ -131,8 +131,12 @@
   "scripts": {
     "lint": "pint --test",
     "lint:fix": "pint",
+    "post-install-cmd": [
+      "bash bin/wordfence-waf-guard.sh"
+    ],
     "post-update-cmd": [
-      "cd web/app/plugins/auctions-and-items/ && bower install"
+      "cd web/app/plugins/auctions-and-items/ && bower install",
+      "bash bin/wordfence-waf-guard.sh"
     ]
   }
 }
