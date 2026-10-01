@@ -6,7 +6,8 @@
 # `nginxdeploy` user, whose SSH key is pinned to this script with a forced command.
 # The single argument is the SSH_ORIGINAL_COMMAND sent by the client:
 #
-#   export   tar of the live site config dir on stdout (read-only)
+#   export   tar of the live site config dir on stdout (read-only); symlinks to
+#            SpinupWP's /etc/nginx/global files are followed so their content is included
 #   test     run `nginx -t` (read-only)
 #   deploy   tar on stdin -> install allowlisted files -> nginx -t -> reload,
 #            restoring the previous files if the test or reload fails
@@ -133,7 +134,7 @@ do_deploy() {
 [[ "$(id -u)" -eq 0 ]] || die "must run as root (via sudo)"
 
 case "${1:-}" in
-  export) tar -C "$SITE_DIR" -cf - . ;;
+  export) tar -C "$SITE_DIR" -chf - . ;;
   test)   nginx -t >&2 ;;
   deploy) do_deploy ;;
   *)      die "unknown command '${1:-}' (expected: export | test | deploy)" ;;
