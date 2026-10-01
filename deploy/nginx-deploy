@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+#
+# nginx-deploy — sync this repo with the live caseantiques.com nginx config.
+#
+#   deploy/nginx-deploy diff          show how the server differs from the working tree
+#   deploy/nginx-deploy pull          overwrite the working tree with the server's files
+#   deploy/nginx-deploy push          deploy the committed custom files (nginx -t gated)
+#   deploy/nginx-deploy test          run `nginx -t` on the server
+#
+# Talks to the root-owned gate script on the server (see deploy/server/).
+
+set -euo pipefail
+
+REPO=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+REMOTE=${NGINX_DEPLOY_REMOTE:-nginxdeploy@174.138.66.201}
+KEY=${NGINX_DEPLOY_KEY:-$HOME/.ssh/caseantiques_nginx_deploy}
+FILE_LIST="$REPO/deploy/custom-files.txt"
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+remote() {
+  ssh -i "$KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE" "$1"
+}
+
+# Fetch the live config into a temp dir; sets $SNAPSHOT.
+fetch_snapshot() {
+  SNAPSHOT=$(mktemp -d)
+  trap 'rm -rf "$SNAPSHOT"' EXIT
+  remote export | tar -x -C "$SNAPSHOT"
+}
+
+cmd_diff() {
+  fetch_snapshot
+  if diff -ru -x .git -x deploy "$REPO" "$SNAPSHOT"; then
+    echo "Server matches the working tree."
+  fi
+}
+
+cmd_pull() {
+  if [[ "${1:-}" != "--force" && -n "$(git -C "$REPO" status --porcelain -- . ':!deploy')" ]]; then
+    die "working tree has uncommitted changes; commit them or re-run with --force"
+  fi
+  fetch_snapshot
+  rsync -rt --delete --exclude .git --exclude deploy "$SNAPSHOT/" "$REPO/"
+  if [[ -z "$(git -C "$REPO" status --porcelain -- . ':!deploy')" ]]; then
+    echo "Server matches the repo; nothing to pull."
+  else
+    echo "Pulled server state. Changes vs. last commit:"
+    git -C "$REPO" status --short -- . ':!deploy'
+    echo "Review with: git -C \"$REPO\" diff"
+  fi
+}
+
+cmd_push() {
+  local line
+  local -a files=()
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    files+=("$line")
+  done < "$FILE_LIST"
+  (( ${#files[@]} > 0 )) || die "no files listed in $FILE_LIST"
+
+  # Deploys HEAD, so what's live always corresponds to a commit.
+  git -C "$REPO" diff --quiet HEAD -- "${files[@]}" \
+    || die "custom files have uncommitted changes; commit before pushing"
+
+  echo "Deploying $(git -C "$REPO" rev-parse --short HEAD) to $REMOTE..."
+  git -C "$REPO" archive --format=tar HEAD -- "${files[@]}" | remote deploy
+}
+
+case "${1:-}" in
+  diff) cmd_diff ;;
+  pull) cmd_pull "${2:-}" ;;
+  push) cmd_push ;;
+  test) remote test ;;
+  *)    sed -n '3,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac

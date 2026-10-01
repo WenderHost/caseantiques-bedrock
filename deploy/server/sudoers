@@ -1,0 +1,3 @@
+# Installed as /etc/sudoers.d/caseantiques-nginx-deploy
+# Lets the nginxdeploy user run the deploy gate as root, and nothing else.
+nginxdeploy ALL=(root) NOPASSWD: /usr/local/sbin/caseantiques-nginx-deploy

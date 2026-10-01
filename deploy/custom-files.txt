@@ -1,0 +1,9 @@
+# Our custom nginx files — the only ones `nginx-deploy push` sends.
+# Everything else in this repo is SpinupWP-managed and is mirrored read-only.
+# Keep in sync with ALLOWED in deploy/server/caseantiques-nginx-deploy
+# (adding a file here also needs the server script re-installed).
+server/sitemap-cache.conf
+server/kill-malformed-urls.conf
+server/cdn-redirect.conf
+server/cdn-redirect-legacy-paths.conf
+location/cache-stampede-protection.conf

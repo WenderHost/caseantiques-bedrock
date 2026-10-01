@@ -1,0 +1,1 @@
+command="sudo /usr/local/sbin/caseantiques-nginx-deploy \"$SSH_ORIGINAL_COMMAND\"",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no-user-rc ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC5XbVJCBlT/2a7Hzihn7fKo9RTl57FLl/5+lW598+zt caseantiques-nginx-deploy@MacBook-Pro
