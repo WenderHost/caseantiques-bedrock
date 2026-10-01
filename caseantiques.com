@@ -1,4 +1,4 @@
-fastcgi_cache_path /cache/caseantiques.com levels=1:2 keys_zone=caseantiques.com:100m inactive=1d; # Managed by SpinupWP
+fastcgi_cache_path /cache/caseantiques.com levels=1:2 keys_zone=caseantiques.com:100m inactive=1M; # Managed by SpinupWP
 include sites-available/caseantiques.com/before/*; # Managed by SpinupWP
 
 server {
@@ -50,7 +50,7 @@ server {
 		try_files $uri =404;
 
 		include fastcgi.conf;
-		fastcgi_pass unix:/run/php/php8.3-caseantiques.sock;
+		fastcgi_pass unix:/run/php/php8.4-caseantiques.sock;
 
 		include sites-available/caseantiques.com/location/*; # Managed by SpinupWP
 	}
