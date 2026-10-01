@@ -147,27 +147,37 @@ Digital" masthead theme, paper cards, KPI grid, before/after tables, and a
 
 ---
 
-## Server-side verification (when a result looks off, or after any nginx change)
+## Server-side verification and deploy (when a result looks off, or for any nginx change)
 
-SSH to web3 (`root@web3`, 174.138.66.201). Config lives at
-`/etc/nginx/sites-available/caseantiques.com/`. Mirror: `bin/nginx/`.
+Live config is at `/etc/nginx/sites-available/caseantiques.com/` on web3 (174.138.66.201). The mirror is `bin/nginx/` (its own git repo, no remote). All syncing goes through `bin/nginx/deploy/nginx-deploy`, which needs no root on this machine; details are in `bin/nginx/deploy/README.md`.
 
 ```bash
-sudo nginx -t                                                  # syntax gate
-sudo nginx -T | grep -nE 'skip_cache|sitemap'                  # sitemap override (set 0) must appear AFTER managed set 1
-sudo nginx -T | grep -nE 'fastcgi_cache|cache_lock|use_stale'  # stampede directives + 'updating' present
+cd bin/nginx
+deploy/nginx-deploy diff    # how the server differs from the working tree; changes nothing
+deploy/nginx-deploy pull    # overwrite the working tree with the server's files, then `git diff`
+deploy/nginx-deploy test    # run `nginx -t` on the server
+deploy/nginx-deploy push    # deploy the committed custom files: nginx -t, reload, auto-rollback on failure
+```
+
+**Workflow for an nginx change:**
+
+1. `deploy/nginx-deploy pull` first. SpinupWP and the dashboard settings (PHP version, cache lifetime) rewrite the managed files, so the mirror drifts. Review `git diff` and commit the sync on its own.
+2. Edit only the custom files listed in `bin/nginx/deploy/custom-files.txt`, then commit. `push` deploys `HEAD`, not the working tree, and refuses if those files have uncommitted changes.
+3. `deploy/nginx-deploy push`. If `nginx -t` fails on the server, the previous files are restored and nginx is not reloaded. Replaced files are backed up under `/var/backups/caseantiques-nginx/<timestamp>/`.
+4. Verify live behaviour with the curl checks below.
+
+**Access limits:** `push` can only write the allowlisted custom files and never deletes anything. It runs as the `nginxdeploy` user, whose key (`~/.ssh/caseantiques_nginx_deploy`) is pinned to the root-owned gate script `/usr/local/sbin/caseantiques-nginx-deploy` and cannot open a shell. Root SSH login is disabled, and the `caseantiques` site user has no sudo and cannot read the nginx directory. Anything outside the gate needs the user to run it as `sudoweb3caseantiques`: adding a file to the allowlist (re-run `deploy/server/install.sh`), deleting a file on the server, or `nginx -T`.
+
+```bash
+# Config checks from this machine, after `deploy/nginx-deploy diff` reports a match (run in bin/nginx):
+grep -rnE 'skip_cache|sitemap' server/ location/                 # sitemap override (set 0) lives in sitemap-cache.conf, which sorts AFTER fastcgi-cache.conf (set 1)
+grep -rnE 'fastcgi_cache|cache_lock|use_stale' server/ location/ # stampede directives + 'updating' present
 # live behaviour:
-curl -sI https://caseantiques.com/sitemap.xml | grep -i fastcgi-cache         # expect HIT (after 1st warm)
+curl -s -o /dev/null -D - https://caseantiques.com/sitemap.xml | grep -i fastcgi-cache  # expect HIT; a cold MISS takes ~50s to build, then HIT
 curl -s -o /dev/null -w '%{http_code}\n' -g --path-as-is \
   "https://caseantiques.com/[CDATA[https:/caseantiques.com/item_tags/molded/]]"  # expect 410
 ```
 
-**nginx customization convention (per SpinupWP support):** never edit SpinupWP's
-managed files (`server/fastcgi-cache.conf`, `location/fastcgi-cache.conf`). Put custom
-config in separately-named `.conf` files in the same `server/` or `location/` include
-dir — the `*/*` wildcard loads them alphabetically (glob sort). To override a value the
-managed file sets, name the file so it sorts AFTER it (e.g. `server/sitemap-cache.conf`
-> `fastcgi-cache.conf`). Current customs: `server/sitemap-cache.conf`,
-`location/cache-stampede-protection.conf`, `server/kill-malformed-urls.conf` (the 410).
-Deploy = copy files to server include dirs → `sudo nginx -t` → `sudo systemctl reload nginx`.
-```
+**nginx customization convention (per SpinupWP support):** never edit SpinupWP's managed files (`server/fastcgi-cache.conf`, `location/fastcgi-cache.conf`). Put custom config in separately-named `.conf` files in the same `server/` or `location/` include dir — the `*/*` wildcard loads them alphabetically (glob sort). To override a value the managed file sets, name the file so it sorts AFTER it (e.g. `server/sitemap-cache.conf` > `fastcgi-cache.conf`). Current customs: `server/sitemap-cache.conf`, `server/kill-malformed-urls.conf` (the 410), `server/cdn-redirect.conf`, `server/cdn-redirect-legacy-paths.conf`, `location/cache-stampede-protection.conf`.
+
+**Cache lifetime:** the page cache is set to one month (`1M`) in SpinupWP as of 2026-10-01, and the sitemaps share it through `server/sitemap-cache.conf`. Left as is by the user's decision.
