@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+#
+# nginx-deploy — sync this repo with a SpinupWP site's live nginx config.
+#
+#   deploy/nginx-deploy diff          show how the server differs from the working tree
+#   deploy/nginx-deploy pull          overwrite the working tree with the server's files
+#   deploy/nginx-deploy push          deploy the committed custom files (nginx -t gated)
+#   deploy/nginx-deploy test          run `nginx -t` on the server
+#   deploy/nginx-deploy check         compare custom-files.txt with the server's allowlist
+#
+# Settings live in deploy/deploy.conf. Talks to the root-owned gate script on the
+# server. Vendored from spinupwp-nginx-deploy (client/nginx-deploy); update it
+# there and re-copy with `bin/nginx-deploy-admin upgrade-client`.
+
+set -euo pipefail
+
+REPO=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+CONF="$REPO/deploy/deploy.conf"
+FILE_LIST="$REPO/deploy/custom-files.txt"
+
+# The mirror may be its own repo or a subdirectory of the site's repo (e.g.
+# bin/nginx/). Custom-file paths are relative to the mirror, so committed
+# content is read from the mirror's subtree of HEAD: HEAD:<prefix>.
+prefix() { git -C "$REPO" rev-parse --show-prefix; }
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+# deploy.conf is KEY=value lines; read, not sourced.
+conf() {
+  local line
+  [[ -f "$CONF" ]] || die "missing $CONF"
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" == "$1="* ]] && { echo "${line#*=}"; return; }
+  done < "$CONF"
+}
+
+REMOTE=${NGINX_DEPLOY_REMOTE:-nginxdeploy@$(conf HOST)}
+KEY=${NGINX_DEPLOY_KEY:-$(conf KEY)}
+KEY=${KEY/#\~/$HOME}
+
+remote() {
+  # NGINX_DEPLOY_SSH replaces ssh entirely (used by the test suite).
+  if [[ -n "${NGINX_DEPLOY_SSH:-}" ]]; then
+    $NGINX_DEPLOY_SSH "$1"
+  else
+    ssh -i "$KEY" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 "$REMOTE" "$1"
+  fi
+}
+
+custom_files() {
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%%#*}
+    line=${line//[[:space:]]/}
+    [[ -n "$line" ]] && echo "$line"
+  done < "$FILE_LIST"
+}
+
+# Fetch the live config into a temp dir; sets $SNAPSHOT.
+fetch_snapshot() {
+  SNAPSHOT=$(mktemp -d)
+  trap 'rm -rf "$SNAPSHOT"' EXIT
+  remote export | tar -x -C "$SNAPSHOT"
+}
+
+dirty() {
+  [[ -n "$(git -C "$REPO" status --porcelain -- . ':!deploy')" ]]
+}
+
+cmd_diff() {
+  fetch_snapshot
+  if diff -ru -x .git -x deploy "$REPO" "$SNAPSHOT"; then
+    echo "Server matches the working tree."
+  fi
+}
+
+# pull makes the mirror match the server, so a custom file whose committed
+# version isn't what the server has would be overwritten (or deleted, if it was
+# never deployed). Refuse instead of making the user notice a ` D` in git status.
+guard_undeployed() {
+  local tree f
+  local -a differ=()
+  tree="HEAD:$(prefix)"
+  while IFS= read -r f; do
+    git -C "$REPO" cat-file -e "$tree$f" 2>/dev/null || continue
+    if [[ ! -f "$SNAPSHOT/$f" ]] || ! git -C "$REPO" show "$tree$f" | cmp -s - "$SNAPSHOT/$f"; then
+      differ+=("$f")
+    fi
+  done < <(custom_files)
+  (( ${#differ[@]} )) || return 0
+  echo "ERROR: these committed custom files differ from the server:" >&2
+  printf '  %s\n' "${differ[@]}" >&2
+  cat >&2 <<'EOF'
+Pulling now would replace your committed versions in the working tree.
+  - Committed but not deployed yet?  Run `push` first, then `pull`.
+  - Deployed from another machine?   Update this repo (git pull) first.
+  - Want the server's copy anyway?   Re-run with `pull --force`.
+EOF
+  exit 1
+}
+
+cmd_pull() {
+  if [[ "${1:-}" != "--force" ]] && dirty; then
+    die "working tree has uncommitted changes; commit them or re-run with --force"
+  fi
+  fetch_snapshot
+  [[ "${1:-}" == "--force" ]] || guard_undeployed
+  # --checksum: compare content, not size+mtime, which can miss a same-size edit.
+  rsync -rtc --delete --exclude .git --exclude deploy "$SNAPSHOT/" "$REPO/"
+  if dirty; then
+    echo "Pulled server state. Changes vs. last commit:"
+    git -C "$REPO" status --short -- . ':!deploy'
+    echo "Review with: git -C \"$REPO\" diff -- ."
+  else
+    echo "Server matches the repo; nothing to pull."
+  fi
+}
+
+cmd_check() {
+  local local_list server_list
+  local_list=$(custom_files | sort)
+  server_list=$(remote allowed | sort)
+  if [[ "$local_list" == "$server_list" ]]; then
+    echo "custom-files.txt matches the server allowlist ($(printf '%s' "$local_list" | grep -c . || true) file(s))."
+  else
+    echo "custom-files.txt and the server allowlist differ (< local, > server):"
+    diff <(printf '%s\n' "$local_list") <(printf '%s\n' "$server_list") | grep '^[<>]' || true
+    echo "Re-register with: bin/nginx-deploy-admin install \"$REPO\"  (from the spinupwp-nginx-deploy project)"
+    return 1
+  fi
+}
+
+cmd_push() {
+  local -a files=()
+  local f
+  while IFS= read -r f; do files+=("$f"); done < <(custom_files)
+  (( ${#files[@]} > 0 )) || die "no files listed in $FILE_LIST"
+
+  local tree
+  tree="HEAD:$(prefix)"
+  for f in "${files[@]}"; do
+    git -C "$REPO" cat-file -e "$tree$f" 2>/dev/null || die "$f is not committed"
+  done
+
+  # Deploys HEAD, so what's live always corresponds to a commit.
+  git -C "$REPO" diff --quiet HEAD -- "${files[@]}" \
+    || die "custom files have uncommitted changes; commit before pushing"
+
+  echo "Deploying $(git -C "$REPO" rev-parse --short HEAD) to $REMOTE..."
+  # Archiving the mirror's subtree keeps tar paths relative to the site's
+  # config dir. Run from the repo root so the pathspecs resolve inside it.
+  git -C "$(git -C "$REPO" rev-parse --show-toplevel)" archive --format=tar "$tree" -- "${files[@]}" | remote deploy
+}
+
+case "${1:-}" in
+  diff)  cmd_diff ;;
+  pull)  cmd_pull "${2:-}" ;;
+  push)  cmd_push ;;
+  test)  remote test ;;
+  check) cmd_check ;;
+  *)     sed -n '3,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+esac

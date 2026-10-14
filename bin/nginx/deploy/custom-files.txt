@@ -1,0 +1,14 @@
+# Our custom nginx files: the only ones `nginx-deploy push` sends.
+# Everything else in this mirror is SpinupWP-managed and mirrored read-only.
+#
+# One path per line, relative to the site's config dir, e.g. server/kill-bad-bots.conf
+# Entries must be <before|server|location|after>/<name>.conf. Files in a dir load
+# alphabetically, so name an override to sort after the managed file it overrides.
+#
+# The server enforces its own copy of this list. After changing it, re-register:
+#   bin/nginx-deploy-admin install <this mirror>   (from the spinupwp-nginx-deploy project)
+server/sitemap-cache.conf
+server/kill-malformed-urls.conf
+server/cdn-redirect.conf
+server/cdn-redirect-legacy-paths.conf
+location/cache-stampede-protection.conf
