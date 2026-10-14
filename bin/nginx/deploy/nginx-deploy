@@ -63,13 +63,32 @@ fetch_snapshot() {
   remote export | tar -x -C "$SNAPSHOT"
 }
 
+# Files pull and diff leave alone. Dotfiles at the mirror's top level (.git,
+# .gitignore, ...) belong to the mirror, not the server, and `rsync --delete`
+# would otherwise remove them. TLS material is refused even from a gate older
+# than 1.1.0, which still exports it.
+RSYNC_FILTER=(--exclude deploy --exclude '/.*'
+  --exclude '*.pem' --exclude '*.key' --exclude '*.crt' --exclude '*.csr' --exclude '*.p12' --exclude '*.pfx')
+DIFF_FILTER=(-x deploy -x '.*' -x '*.pem' -x '*.key' -x '*.crt' -x '*.csr' -x '*.p12' -x '*.pfx')
+
+# Remove TLS files an older gate already delivered into the mirror.
+purge_tls() {
+  local f
+  while IFS= read -r -d '' f; do
+    rm -f -- "$f"
+    echo "Removed ${f#"$REPO"/} (TLS material from the server; never kept in the mirror)"
+  done < <(find "$REPO" \( -path "$REPO/.git" -o -path "$REPO/deploy" \) -prune -o -type f \( -name '*.pem' -o -name '*.key' -o -name '*.crt' -o -name '*.csr' -o -name '*.p12' -o -name '*.pfx' \) -print0)
+}
+
+# TLS files don't count: pull removes them anyway, and refusing to pull over
+# one would leave it in place.
 dirty() {
-  [[ -n "$(git -C "$REPO" status --porcelain -- . ':!deploy')" ]]
+  [[ -n "$(git -C "$REPO" status --porcelain -- . ':!deploy' | grep -vE '\.(pem|key|crt|csr|p12|pfx)"?$')" ]]
 }
 
 cmd_diff() {
   fetch_snapshot
-  if diff -ru -x .git -x deploy "$REPO" "$SNAPSHOT"; then
+  if diff -ru "${DIFF_FILTER[@]}" "$REPO" "$SNAPSHOT"; then
     echo "Server matches the working tree."
   fi
 }
@@ -106,7 +125,8 @@ cmd_pull() {
   fetch_snapshot
   [[ "${1:-}" == "--force" ]] || guard_undeployed
   # --checksum: compare content, not size+mtime, which can miss a same-size edit.
-  rsync -rtc --delete --exclude .git --exclude deploy "$SNAPSHOT/" "$REPO/"
+  rsync -rtc --delete "${RSYNC_FILTER[@]}" "$SNAPSHOT/" "$REPO/"
+  purge_tls
   if dirty; then
     echo "Pulled server state. Changes vs. last commit:"
     git -C "$REPO" status --short -- . ':!deploy'
