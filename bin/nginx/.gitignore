@@ -1,0 +1,9 @@
+# TLS material SpinupWP can leave in a site's nginx config dir. The gate no
+# longer exports it (1.1.0) and pull refuses it, but keep it out of git
+# regardless. pull leaves this file alone.
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
