@@ -8,6 +8,14 @@
 #   deploy/nginx-deploy test          run `nginx -t` on the server
 #   deploy/nginx-deploy check         compare custom-files.txt with the server's allowlist
 #
+# Setup and admin live in the spinupwp-nginx-deploy project, not in this script
+# (github.com/mwender/spinupwp-nginx-deploy). Run them as
+# <project>/bin/nginx-deploy-admin <command> <app-dir>:
+#   install          register the site; re-run after editing custom-files.txt (needs sudo)
+#   add-key          let this machine deploy the site too (then commit, and install)
+#   doctor           check config, key, gate and allowlist end to end
+#   upgrade-client   replace this script with the project's current version
+#
 # Settings live in deploy/deploy.conf. Talks to the root-owned gate script on the
 # server. Vendored from spinupwp-nginx-deploy (client/nginx-deploy); update it
 # there and re-copy with `bin/nginx-deploy-admin upgrade-client`.
@@ -33,6 +41,26 @@ conf() {
     [[ "$line" == "$1="* ]] && { echo "${line#*=}"; return; }
   done < "$CONF"
 }
+
+# The header comment, up to "Settings live", plus where the admin tool is here.
+usage() {
+  local p
+  sed -n '3,/^# Settings live/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//'
+  for p in "$HOME/Dropbox/Projects/spinupwp-nginx-deploy" "$HOME/Projects/spinupwp-nginx-deploy"; do
+    if [[ -x "$p/bin/nginx-deploy-admin" ]]; then
+      echo "On this machine: $p/bin/nginx-deploy-admin"
+      break
+    fi
+  done
+  exit "$1"
+}
+
+# Help needs no config, so answer it before reading deploy.conf.
+case "${1:-}" in
+  help|-h|--help) usage 0 ;;
+  diff|pull|push|test|check) ;;
+  *) usage 1 ;;
+esac
 
 REMOTE=${NGINX_DEPLOY_REMOTE:-nginxdeploy@$(conf HOST)}
 KEY=${NGINX_DEPLOY_KEY:-$(conf KEY)}
@@ -178,5 +206,6 @@ case "${1:-}" in
   push)  cmd_push ;;
   test)  remote test ;;
   check) cmd_check ;;
-  *)     sed -n '3,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+  help|-h|--help) usage 0 ;;
+  *)     usage 1 ;;
 esac
